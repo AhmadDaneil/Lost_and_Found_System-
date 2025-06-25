@@ -1,0 +1,134 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #f9fb9f;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.signup-container {
+  background-color: #fffddc;
+  border: 2px solid #000;
+  border-radius: 10px;
+  display: flex;
+  padding: 20px;
+  max-width: 1000px;
+  width: 95%;
+  height: 55%;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.left-panel {
+  flex: 1;
+  background-color: #f9fb9f;
+  border-radius: 10px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.vertical-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 2rem;
+  font-weight: bold;
+  letter-spacing: 8px;
+  margin-bottom: 10px;
+}
+
+.logo {
+  width: 200px;
+    margin-bottom: 20px;
+  filter: drop-shadow(1px 1px 1px #888);
+}
+
+.right-panel {
+  flex: 2;
+  padding: 0 20px;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-row {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+  flex: 1;
+  padding: 15px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+  width: 100%;
+}
+
+.gender-row {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  margin-top: 10px;
+}
+
+.gender-options {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+  margin-left: 10px;
+}
+
+.gender-row label {
+  font-size: 0.9rem;
+}
+
+.btn {
+  margin: 20px auto 10px;
+  width: 300px;
+  padding: 12px 30px;
+  font-size: 1rem;
+  font-weight: bold;
+  background-color: #f9fb9f;
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+}
+
+.login-text {
+  text-align: center;
+  font-size: 0.9rem;
+  list-style: none;
+}
+
+.login-text a {
+  text-decoration: none;
+  color: blue;
+    font-weight: bold;
+}
+
+.login-text a:hover {
+  text-decoration: underline;
+}
