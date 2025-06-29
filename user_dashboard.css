@@ -10,7 +10,7 @@
     --text-color-light: #666; /* Lighter text for secondary info */
 
     /* Accent Color */
-    --accent-color: #4CAF50; /* A good green */
+    --accent-color: #000000; /* A good green */
     --accent-light: #8bc34a; /* A lighter shade of the accent for subtle highlights */
     --logout-color: #dc3545; /* Red for logout button */
     --logout-hover-color: #c82333;

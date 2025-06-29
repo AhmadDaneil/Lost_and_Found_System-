@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - FoundIt</title>
+    <link rel="stylesheet" href="admin_homepage.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="admin-dashboard-container">
+        <header class="admin-header">
+            <div class="header-left">
+                <button class="back-btn" onclick="window.history.back()">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+                <div class="admin-logo">FoundIt</div>
+            </div>
+            <div class="header-right">
+                <img src="admin-avatar.png" alt="Admin" class="admin-avatar">
+                <button class="logout-btn" onclick="alert('Admin Logging out...'); /* Add your admin logout logic here */">
+                    <i class="fas fa-arrow-right-from-bracket"></i> Logout
+                </button>
+            </div>
+        </header>
+
+        <main class="admin-main-content">
+            <div class="controls-row">
+                <div class="search-box">
+                    <input type="text" placeholder="Search" class="search-input">
+                    <button class="search-icon"><i class="fas fa-search"></i></button>
+                </div>
+                <div class="sort-dropdown">
+                    <select>
+                        <option value="az">A to Z</option>
+                        <option value="za">Z to A</option>
+                        <option value="date">Date</option>
+                        <option value="user">User</option>
+                    </select>
+                    <i class="fas fa-caret-down"></i> </div>
+            </div>
+
+            <section class="admin-table-section">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Item Name</th>
+                            <th>Username</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td data-label="ID">01</td>
+                            <td data-label="Item Name">Wallet</td>
+                            <td data-label="Username">Ali_Ali</td>
+                            <td data-label="Status" class="status-approved">Approved</td>
+                            <td data-label="Date">23/1/2024</td>
+                        </tr>
+                        <tr>
+                            <td data-label="ID">02</td>
+                            <td data-label="Item Name">Watch</td>
+                            <td data-label="Username">AbuHensem2</td>
+                            <td data-label="Status" class="status-approved">Approved</td>
+                            <td data-label="Date">20/2/2025</td>
+                        </tr>
+                        <tr>
+                            <td data-label="ID">03</td>
+                            <td data-label="Item Name">Samsung J2 Prime</td>
+                            <td data-label="Username">creppyPasta</td>
+                            <td data-label="Status" class="status-pending">Pending</td>
+                            <td data-label="Date">21/3/2025</td>
+                        </tr>
+                        <tr>
+                            <td data-label="ID">04</td>
+                            <td data-label="Item Name">Tyeso Tumbler</td>
+                            <td data-label="Username">Sa_Bahar</td>
+                            <td data-label="Status" class="status-pending">Pending</td>
+                            <td data-label="Date">19/5/2025</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <div class="admin-action-buttons">
+                <button class="admin-btn view-report-btn">View Report</button>
+                <button class="admin-btn approved-btn">Approved</button>
+                <button class="admin-btn revoke-btn">Revoke</button>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
