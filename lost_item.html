@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Lost Item - FoundIt</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet"/>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      background-color: #f5ff9c;
+      padding: 20px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+
+    .logo {
+      font-size: 32px;
+      font-weight: 800;
+      text-shadow: 2px 2px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    .icons {
+      display: flex;
+      gap: 20px;
+    }
+
+    .icons img {
+      width: 28px;
+      height: 28px;
+      cursor: pointer;
+    }
+
+    .content-box {
+      background-color: #fffdd0;
+      padding: 30px;
+      border-radius: 16px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .section-title {
+      text-align: center;
+      font-weight: 600;
+      margin-bottom: 30px;
+    }
+
+    .top-content {
+      display: flex;
+      gap: 30px;
+      flex-wrap: wrap;
+    }
+
+    .image-box {
+      background-color: #8b1e1e;
+      color: #fff;
+      width: 180px;
+      height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .details-box {
+      flex: 1;
+      background-color: white;
+      padding: 20px;
+      border-radius: 12px;
+      display: flex;
+      justify-content: space-between;
+      flex-direction: column;
+    }
+
+    .details-box h3 {
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+
+    .details-box p {
+      font-size: 14px;
+      color: #444;
+      line-height: 1.4;
+    }
+
+    .details-date {
+      text-align: right;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .description-box {
+      margin-top: 20px;
+      background-color: white;
+      padding: 20px;
+      border-radius: 12px;
+      min-height: 120px;
+    }
+
+    .status-box {
+      margin-top: 20px;
+      background-color: white;
+      padding: 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      color: #444;
+    }
+
+    .status-box strong {
+      display: inline-block;
+      width: 60px;
+      color: #222;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="logo">FoundIt</div>
+    <div class="icons">
+      <img src="https://img.icons8.com/ios-glyphs/30/home.png" alt="Home" />
+      <img src="https://img.icons8.com/ios-glyphs/30/chat.png" alt="Chat" />
+    </div>
+  </div>
+
+  <div class="content-box">
+    <div class="section-title">Lost Item</div>
+
+    <div class="top-content">
+      <div class="image-box">img</div>
+
+      <div class="details-box">
+        <div>
+          <h3>Item Name</h3>
+          <p>Item Category<br/>Lost Location</p>
+        </div>
+        <div class="details-date">yy/mm/dd</div>
+      </div>
+    </div>
+
+    <div class="description-box">
+      Description
+    </div>
+
+    <div class="status-box">
+      <strong>Status:</strong> Not found
+    </div>
+  </div>
+
+</body>
+</html>
