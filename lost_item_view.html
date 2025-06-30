@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Lost Item - FoundIt</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet"/>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      background-color: #f5ff9c;
+      padding: 20px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+
+    .logo {
+      font-size: 32px;
+      font-weight: 800;
+      text-shadow: 2px 2px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    .icons {
+      display: flex;
+      gap: 20px;
+    }
+
+    .icon-btn,
+    .back-btn,
+    .edit-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background-color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #000;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .icon-btn:hover,
+    .back-btn:hover,
+    .edit-btn:hover {
+      background-color: #000;
+      transform: scale(1.1);
+    }
+
+    .icon-btn:hover svg,
+    .back-btn:hover svg,
+    .edit-btn:hover svg {
+      fill: #f5ff9c;
+    }
+
+    .icon-btn svg,
+    .back-btn svg,
+    .edit-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: #000;
+      transition: fill 0.3s ease;
+    }
+
+    .content-box {
+      background-color: #fffdd0;
+      padding: 30px;
+      border-radius: 16px;
+      max-width: 900px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .back-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+    }
+
+    .edit-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+    }
+
+    .section-title {
+      text-align: center;
+      font-weight: 600;
+      margin-bottom: 30px;
+      font-size: 20px;
+    }
+
+    .top-content {
+      display: flex;
+      gap: 30px;
+      flex-wrap: wrap;
+    }
+
+    .image-box {
+      background-color: #8b1e1e;
+      color: #fff;
+      width: 180px;
+      height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .details-box {
+      flex: 1;
+      background-color: white;
+      padding: 20px;
+      border-radius: 12px;
+      display: flex;
+      justify-content: space-between;
+      flex-direction: column;
+    }
+
+    .details-box h3 {
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+
+    .details-box p {
+      font-size: 14px;
+      color: #444;
+      line-height: 1.4;
+    }
+
+    .details-date {
+      text-align: right;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .description-box {
+      margin-top: 20px;
+      background-color: white;
+      padding: 20px;
+      border-radius: 12px;
+      min-height: 100px;
+      font-size: 14px;
+      color: #444;
+    }
+
+    .status-box {
+      margin-top: 20px;
+      background-color: white;
+      padding: 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      color: #444;
+    }
+
+    .status-box strong {
+      display: inline-block;
+      width: 60px;
+      color: #222;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="logo">FoundIt</div>
+    <div class="icons">
+      <!-- Home Icon -->
+      <a href="homepage.html" class="icon-btn" title="Home">
+        <svg viewBox="0 0 24 24">
+          <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-6v-6H10v6H4a1 1 0 0 1-1-1V9.5z"/>
+        </svg>
+      </a>
+      <!-- Telegram Icon -->
+      <a href="https://t.me/FoundItSupport" target="_blank" class="icon-btn" title="Chat on Telegram">
+        <svg viewBox="0 0 24 24">
+          <path d="M9.036 17.813c-.267 0-.224-.101-.316-.354l-1.105-3.641 8.506-5.375c.388-.264.747.084.58.526l-2.44 7.768c-.135.408-.355.51-.722.318l-2.006-1.478-0.97.936c-.1.1-.184.184-.378.184zM12 0C5.373 0 0 5.373 0 12c0 6.628 5.373 12 12 12 6.628 0 12-5.372 12-12 0-6.627-5.372-12-12-12z"/>
+        </svg>
+      </a>
+    </div>
+  </div>
+
+  <div class="content-box">
+    <!-- Back Button -->
+    <a href="homepage.html" class="back-btn" title="Back to Home">
+      <svg viewBox="0 0 24 24">
+        <path d="M15 18l-6-6 6-6"/>
+      </svg>
+    </a>
+
+    <!-- Edit Button -->
+    <a href="lost_item.html" class="edit-btn" title="Edit Lost Item">
+      <svg viewBox="0 0 24 24">
+        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM21.71 6.04a1.003 1.003 0 0 0 0-1.41l-2.34-2.34a1.003 1.003 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+      </svg>
+    </a>
+
+    <div class="section-title">Lost Item</div>
+
+    <div class="top-content">
+      <div class="image-box">img</div>
+
+      <div class="details-box">
+        <div>
+          <h3>Wallet</h3>
+          <p>Personal Item<br/>Lost at: Cafeteria</p>
+        </div>
+        <div class="details-date">2025/06/25</div>
+      </div>
+    </div>
+
+    <div class="description-box">
+      Brown leather wallet with ID and student card inside. Last seen near the main dining area.
+    </div>
+
+    <div class="status-box">
+      <strong>Status:</strong> Not found
+    </div>
+  </div>
+
+</body>
+</html>
