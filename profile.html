@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Profile - FoundIt</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet"/>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      background-color: #f5ff9c;
+      padding: 20px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+
+    .logo {
+      font-size: 32px;
+      font-weight: 800;
+    }
+
+    .icon-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background-color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #000;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .icon-btn:hover {
+      background-color: #000;
+      transform: scale(1.1);
+    }
+
+    .icon-btn:hover svg {
+      fill: #f5ff9c;
+    }
+
+    .icon-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: #000;
+      transition: fill 0.3s ease;
+    }
+
+    .profile-container {
+      background-color: #fffdd0;
+      padding: 50px 30px 30px;
+      border-radius: 16px;
+      max-width: 700px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .profile-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .profile-header h2 {
+      font-size: 24px;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .back-btn {
+      position: absolute;
+      left: 0;
+      top: 0;
+    }
+
+    .profile-pic {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 20px;
+      margin-bottom: 30px;
+    }
+
+    .profile-img {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background-color: #8b1e1e;
+      color: white;
+      font-size: 36px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .profile-img img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .btn-light, .btn-danger {
+      margin-top: 10px;
+      font-size: 14px;
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .btn-light {
+      background-color: #eeeeee;
+      color: #222;
+    }
+
+    .btn-light:hover {
+      background-color: #dcdcdc;
+    }
+
+    .btn-danger {
+      background-color: #d32f2f;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background-color: #b71c1c;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    input[type="text"],
+    input[type="email"] {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+
+    .save-btn {
+      background-color: #8b1e1e;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    .save-btn:hover {
+      background-color: #6a1515;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="logo">FoundIt</div>
+    <a href="homepage.html" class="icon-btn" title="Home">
+      <svg viewBox="0 0 24 24">
+        <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-6v-6H10v6H4a1 1 0 0 1-1-1V9.5z"/>
+      </svg>
+    </a>
+  </div>
+
+  <div class="profile-container">
+    <!-- Profile Title + Back Button -->
+    <div class="profile-header">
+      <a href="settings.html" class="icon-btn back-btn" title="Back">
+        <svg viewBox="0 0 24 24">
+          <path d="M15 18l-6-6 6-6"/>
+        </svg>
+      </a>
+      <h2>Profile</h2>
+    </div>
+
+    <!-- Profile Image -->
+    <div class="profile-pic">
+      <div class="profile-img" id="profileImg">
+        <span id="initials">A</span>
+      </div>
+      <input type="file" id="profileUpload" accept="image/*" />
+      <button class="btn-light" onclick="document.getElementById('profileUpload').click()">Change profile photo</button>
+      <button class="btn-danger" onclick="removePhoto()">Remove profile photo</button>
+    </div>
+
+    <!-- Input Fields -->
+    <div class="form-group">
+      <label for="name">Full Name</label>
+      <input type="text" id="name" value="Aisyah" oninput="updateInitials()" />
+    </div>
+
+    <div class="form-group">
+      <label for="email">Email Address</label>
+      <input type="email" id="email" value="aisyah@example.com" />
+    </div>
+
+    <div class="form-group">
+      <label for="telegram">Telegram Username</label>
+      <input type="text" id="telegram" value="@aisyahFoundIt" />
+    </div>
+
+    <button class="save-btn" onclick="saveProfile()">Save Changes</button>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById('profileUpload');
+    const profileImg = document.getElementById('profileImg');
+    const initialsSpan = document.getElementById('initials');
+
+    fileInput.addEventListener('change', function () {
+      const file = this.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          profileImg.innerHTML = `<img src="${e.target.result}" alt="Profile Photo">`;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    function updateInitials() {
+      const name = document.getElementById('name').value.trim();
+      if (!profileImg.querySelector('img')) {
+        initialsSpan.textContent = name.length > 0 ? name[0].toUpperCase() : '?';
+      }
+    }
+
+    function removePhoto() {
+      profileImg.innerHTML = `<span id="initials">${document.getElementById('name').value[0].toUpperCase()}</span>`;
+    }
+
+    function saveProfile() {
+      alert("Profile changes saved!");
+    }
+
+    window.onload = updateInitials;
+  </script>
+
+</body>
+</html>
