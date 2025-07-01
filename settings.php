@@ -338,7 +338,7 @@ $user_full_name = $_SESSION['full_name'] ?? 'User';
     <!-- Help & Support -->
     <div class="setting-tile">
       <div class="setting-title">Help & Support</div>
-      <a href="https://t.me/FoundItSupport" target="_blank" class="setting-sub">Contact Support</a>
+      <a href="https://t.me/+ma-FOEPB6wg0ZDU9" target="_blank" class="setting-sub">FoundIt telegram group</a>
     </div>
 
   </div>
