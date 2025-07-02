@@ -1,13 +1,11 @@
 <?php
 session_start();
-require_once 'db_connect.php'; // Include if you plan to save settings to DB
-require_once 'config.php';    // Include if you use BASE_URL or other config vars
+require_once 'db_connect.php';
+require_once 'config.php';
 
-// Enable error reporting for debugging
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
     $_SESSION['error_message'] = "You must be logged in to access settings.";
     header("Location: login.html");
@@ -15,8 +13,6 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $user_full_name = $_SESSION['full_name'] ?? 'User';
-// In a real application, you'd fetch user settings from the DB here
-// For now, we'll use client-side defaults or simple session values if needed.
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -26,7 +22,10 @@ $user_full_name = $_SESSION['full_name'] ?? 'User';
   <title>Settings - FoundIt</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet"/>
   <style>
-    /* Your existing CSS from unified_styles.css and settings.html's style block */
+    html {
+      font-size: 16px; /* Default base font size */
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -36,31 +35,31 @@ $user_full_name = $_SESSION['full_name'] ?? 'User';
 
     body {
       background-color: #f5ff9c;
-      padding: 20px;
+      padding: 1.25rem;
     }
 
     .header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 30px;
+      margin-bottom: 1.875rem;
     }
 
     .logo {
-      font-size: 32px;
+      font-size: 2rem;
       font-weight: 800;
       text-shadow: 2px 2px 2px rgba(0, 0, 0, 0.1);
     }
 
     .icon-btn {
-      width: 38px;
-      height: 38px;
+      width: 2.375rem;
+      height: 2.375rem;
       border-radius: 50%;
       background-color: white;
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 2px solid #000;
+      border: 0.125rem solid #000;
       cursor: pointer;
       transition: all 0.3s ease;
     }
@@ -75,16 +74,16 @@ $user_full_name = $_SESSION['full_name'] ?? 'User';
     }
 
     .icon-btn svg {
-      width: 20px;
-      height: 20px;
+      width: 1.25rem;
+      height: 1.25rem;
       fill: #000;
       transition: fill 0.3s ease;
     }
 
     .settings-container {
       background-color: #fffdd0;
-      padding: 30px;
-      border-radius: 16px;
+      padding: 1.875rem;
+      border-radius: 1rem;
       max-width: 600px;
       margin: 0 auto;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
@@ -95,12 +94,12 @@ $user_full_name = $_SESSION['full_name'] ?? 'User';
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 30px;
+      margin-bottom: 1.875rem;
       position: relative;
     }
 
     .settings-title {
-      font-size: 24px;
+      font-size: 1.5rem;
       font-weight: 600;
       text-align: center;
     }
@@ -113,41 +112,37 @@ $user_full_name = $_SESSION['full_name'] ?? 'User';
 
     .setting-tile {
       background-color: white;
-      padding: 20px;
-      border-radius: 12px;
-      margin-bottom: 15px;
+      padding: 1.25rem;
+      border-radius: 0.75rem;
+      margin-bottom: 0.9375rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
     }
 
-    .setting-tile:last-child {
-      margin-bottom: 0;
-    }
-
     .setting-title {
-      font-size: 18px;
+      font-size: 1.125rem;
       font-weight: 600;
       color: #333;
     }
 
     .setting-sub {
-      font-size: 14px;
+      font-size: 0.875rem;
       color: #666;
     }
 
     .profile-box {
       display: flex;
       align-items: center;
-      gap: 15px;
-      text-decoration: none; /* For the link */
+      gap: 0.9375rem;
+      text-decoration: none;
       color: inherit;
     }
 
     .profile-img {
-      width: 50px;
-      height: 50px;
+      width: 3.125rem;
+      height: 3.125rem;
       border-radius: 50%;
       background-color: #8b1e1e;
       color: white;
@@ -155,44 +150,42 @@ $user_full_name = $_SESSION['full_name'] ?? 'User';
       align-items: center;
       justify-content: center;
       font-weight: bold;
-      font-size: 24px;
+      font-size: 1.5rem;
       overflow: hidden;
     }
 
     .profile-img img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
 
     .profile-texts {
       flex-grow: 1;
     }
 
-    /* Font Size Slider */
     .font-size-slider {
       display: flex;
       flex-direction: column;
       align-items: center;
-      flex-grow: 1; /* Allow it to take available space */
+      flex-grow: 1;
     }
 
     .font-size-slider input[type="range"] {
       width: 100%;
-      margin-bottom: 5px;
+      margin-bottom: 0.3125rem;
     }
 
     .font-size-slider small {
-      font-size: 12px;
+      font-size: 0.75rem;
       color: #777;
     }
 
-    /* Toggle Switch for Dark Mode */
     .toggle-switch {
       position: relative;
       display: inline-block;
-      width: 50px;
-      height: 28px;
+      width: 3.125rem;
+      height: 1.75rem;
     }
 
     .toggle-switch input {
@@ -210,16 +203,16 @@ $user_full_name = $_SESSION['full_name'] ?? 'User';
       bottom: 0;
       background-color: #ccc;
       transition: .4s;
-      border-radius: 28px;
+      border-radius: 1.75rem;
     }
 
     .slider:before {
       position: absolute;
       content: "";
-      height: 20px;
-      width: 20px;
-      left: 4px;
-      bottom: 4px;
+      height: 1.25rem;
+      width: 1.25rem;
+      left: 0.25rem;
+      bottom: 0.25rem;
       background-color: white;
       transition: .4s;
       border-radius: 50%;
@@ -230,26 +223,27 @@ $user_full_name = $_SESSION['full_name'] ?? 'User';
     }
 
     input:checked + .slider:before {
-      transform: translateX(22px);
+      transform: translateX(1.375rem);
     }
 
-    /* Message styling */
     .message {
-        padding: 10px;
-        margin-bottom: 15px;
-        border-radius: 5px;
-        text-align: center;
-        font-weight: 500;
+      padding: 0.625rem;
+      margin-bottom: 0.9375rem;
+      border-radius: 0.3125rem;
+      text-align: center;
+      font-weight: 500;
     }
+
     .message.success {
-        background-color: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
     }
+
     .message.error {
-        background-color: #f8d7da;
-        color: #721c24;
-        border: 1px solid #f5c6cb;
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
     }
   </style>
 </head>
@@ -266,7 +260,6 @@ $user_full_name = $_SESSION['full_name'] ?? 'User';
 
   <div class="settings-container">
 
-    <!-- Header with Back and Title -->
     <div class="settings-header">
       <a href="homepage.php" class="icon-btn back-btn" title="Back to Home">
         <svg viewBox="0 0 24 24">
@@ -276,7 +269,6 @@ $user_full_name = $_SESSION['full_name'] ?? 'User';
       <div class="settings-title">Settings</div>
     </div>
 
-    <!-- Display success/error messages from session -->
     <?php if (isset($_SESSION['success_message'])): ?>
       <div class="message success">
         <?php echo $_SESSION['success_message']; unset($_SESSION['success_message']); ?>
@@ -288,11 +280,9 @@ $user_full_name = $_SESSION['full_name'] ?? 'User';
       </div>
     <?php endif; ?>
 
-    <!-- Profile Link -->
     <a href="profile.php" class="profile-link">
       <div class="setting-tile profile-box">
         <div class="profile-img">
-          <!-- Display first initial of full name -->
           <?php echo htmlspecialchars(strtoupper(substr($user_full_name, 0, 1))); ?>
         </div>
         <div class="profile-texts">
@@ -302,7 +292,6 @@ $user_full_name = $_SESSION['full_name'] ?? 'User';
       </div>
     </a>
 
-    <!-- Font Size -->
     <div class="setting-tile">
       <div class="setting-title">Font Size</div>
       <div class="font-size-slider">
@@ -311,7 +300,6 @@ $user_full_name = $_SESSION['full_name'] ?? 'User';
       </div>
     </div>
 
-    <!-- Dark Mode -->
     <div class="setting-tile">
       <div class="setting-title">Dark Mode</div>
       <label class="toggle-switch">
@@ -320,7 +308,6 @@ $user_full_name = $_SESSION['full_name'] ?? 'User';
       </label>
     </div>
 
-    <!-- Notifications -->
     <div class="setting-tile">
       <div class="setting-title">Notifications</div>
       <label class="toggle-switch">
@@ -329,13 +316,11 @@ $user_full_name = $_SESSION['full_name'] ?? 'User';
       </label>
     </div>
 
-    <!-- About Us -->
     <div class="setting-tile">
       <div class="setting-title">About Us</div>
       <a href="#" class="setting-sub" onclick="alert('FoundIt App - Version 1.0. Developed to help you find and report lost and found items easily.')">Learn more</a>
     </div>
 
-    <!-- Help & Support -->
     <div class="setting-tile">
       <div class="setting-title">Help & Support</div>
       <a href="https://t.me/+ma-FOEPB6wg0ZDU9" target="_blank" class="setting-sub">FoundIt telegram group</a>
@@ -344,34 +329,31 @@ $user_full_name = $_SESSION['full_name'] ?? 'User';
   </div>
 
   <script>
-    // Client-side JavaScript for Font Size
     const fontSizeSlider = document.getElementById('fontSizeSlider');
-    const body = document.body;
+    const html = document.documentElement;
 
-    // Load saved font size from localStorage (if any)
     const savedFontSize = localStorage.getItem('fontSize');
     if (savedFontSize) {
-      body.style.fontSize = savedFontSize + 'px';
+      html.style.fontSize = savedFontSize + 'px';
       fontSizeSlider.value = savedFontSize;
     }
 
-    fontSizeSlider.addEventListener('input', function() {
+    fontSizeSlider.addEventListener('input', function () {
       const newSize = this.value;
-      body.style.fontSize = newSize + 'px';
-      localStorage.setItem('fontSize', newSize); // Save to localStorage
+      html.style.fontSize = newSize + 'px';
+      localStorage.setItem('fontSize', newSize);
     });
 
-    // Client-side JavaScript for Dark Mode
     const darkModeToggle = document.getElementById('darkModeToggle');
+    const body = document.body;
 
-    // Load saved dark mode state from localStorage (if any)
     const savedDarkMode = localStorage.getItem('darkMode');
     if (savedDarkMode === 'enabled') {
       body.classList.add('dark-mode');
       darkModeToggle.checked = true;
     }
 
-    darkModeToggle.addEventListener('change', function() {
+    darkModeToggle.addEventListener('change', function () {
       if (this.checked) {
         body.classList.add('dark-mode');
         localStorage.setItem('darkMode', 'enabled');
@@ -381,7 +363,6 @@ $user_full_name = $_SESSION['full_name'] ?? 'User';
       }
     });
 
-    // Basic dark mode styles (can be expanded in unified_styles.css)
     const style = document.createElement('style');
     style.innerHTML = `
       .dark-mode {
@@ -418,11 +399,10 @@ $user_full_name = $_SESSION['full_name'] ?? 'User';
         background-color: #777;
       }
       input:checked + .slider {
-        background-color: #a04040; /* Darker red for dark mode toggle */
+        background-color: #a04040;
       }
     `;
     document.head.appendChild(style);
-
   </script>
 
 </body>
