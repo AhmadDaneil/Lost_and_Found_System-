@@ -21,13 +21,12 @@
     </div>
 
     <div class="right-panel">
-      <div class = "back-button-header">
-        <a href = "index.html" class="back-button">
+      <div class="back-button-header">
+        <a href="index.html" class="back-button">
           <i class="fas fa-arrow-left"></i> Back
         </a>
       </div>
 
-      <!-- Form action changed to process_signup.php -->
       <form action="process_signup.php" method="POST">
         <div class="form-row">
           <input type="text" name="full_name" placeholder="Full Name" required>
@@ -43,16 +42,10 @@
         </div>
         <div class="form-row">
           <input type="text" name="country" placeholder="Country" required>
-          <!-- Added Telegram Username field -->
           <input type="text" name="telegram_username" placeholder="Telegram Username (e.g., @yourusername)">
         </div>
-        <div class="form-row gender-row">
-        <label>Gender:</label>
-        <div class="gender-options">
-            <!-- Changed to radio buttons for single selection -->
-            <label><input type="radio" name="gender" value="Male"> Male</label>
-            <label><input type="radio" name="gender" value="Female"> Female</label>
-        </div>
+        <div class="form-row">
+          <input type="text" name="gender" placeholder="Gender (optional)">
         </div>
         <button type="submit" class="btn"> SIGN UP <i class="fas fa-arrow-right"></i></button>
       </form>

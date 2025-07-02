@@ -286,7 +286,7 @@ body {
   padding: 20px;
   max-width: 1000px;
   width: 95%;
-  height: 55%;
+  height: 65%; /* increased from 55% to 65% */
   box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
@@ -362,25 +362,6 @@ input[type="password"] {
   border-radius: 8px;
   font-size: 1rem;
   width: 100%;
-}
-
-.gender-row {
-  display: flex;
-  flex-direction: column;
-  gap: 25px;
-  margin-top: 10px;
-}
-
-.gender-options {
-  display: flex;
-  gap: 15px;
-}
-
-.gender-options label {
-  font-size: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 5px;
 }
 
 .btn {
