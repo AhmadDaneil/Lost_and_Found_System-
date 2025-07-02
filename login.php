@@ -150,8 +150,8 @@ if (isset($_COOKIE['remember_user_id']) && !isset($_SESSION['user_id'])) {
     }
 
     .login-btn {
-      background-color: #8b1e1e; /* Dark red button */
-      color: white;
+      background-color: #00cc00;
+      color: black;
       padding: 12px 20px;
       border: none;
       border-radius: 8px;
@@ -170,7 +170,7 @@ if (isset($_COOKIE['remember_user_id']) && !isset($_SESSION['user_id'])) {
     }
 
     .login-btn:hover {
-      background-color: #6a1515; /* Darker red on hover */
+      background-color: #004d00;
     }
 
     .separator {
