@@ -16,13 +16,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Basic validation
     if (empty($full_name) || empty($email) || empty($password) || empty($confirm_password)) {
         $_SESSION['error_message'] = "Please fill in all required fields.";
-        header("Location: signup.html");
+        header("Location: signup.php");
         exit();
     }
 
     if ($password !== $confirm_password) {
         $_SESSION['error_message'] = "Passwords do not match.";
-        header("Location: signup.html");
+        header("Location: signup.php");
         exit();
     }
 
@@ -41,7 +41,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $_SESSION['error_message'] = "Email already registered. Please use a different email or log in.";
         $stmt->close();
         closeDbConnection($conn);
-        header("Location: signup.html");
+        header("Location: signup.php");
         exit();
     }
     $stmt->close();
@@ -57,7 +57,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $_SESSION['error_message'] = "Telegram username already taken. Please choose another.";
             $stmt->close();
             closeDbConnection($conn);
-            header("Location: signup.html");
+            header("Location: signup.php");
             exit();
         }
         $stmt->close();
@@ -70,11 +70,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if ($stmt->execute()) {
         $_SESSION['success_message'] = "Registration successful! You can now log in.";
-        header("Location: login.html"); // Redirect to login page after successful registration
+        header("Location: login.php"); // Redirect to login page after successful registration
         exit();
     } else {
         $_SESSION['error_message'] = "Error during registration: " . $stmt->error;
-        header("Location: signup.html");
+        header("Location: signup.php");
         exit();
     }
 
@@ -82,7 +82,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     closeDbConnection($conn);
 } else {
     // If accessed directly without POST request
-    header("Location: signup.html");
+    header("Location: signup.php");
     exit();
 }
 ?>
