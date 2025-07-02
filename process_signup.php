@@ -57,7 +57,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $_SESSION['error_message'] = "Telegram username already taken. Please choose another.";
             $stmt->close();
             closeDbConnection($conn);
-            header("Location: signup.php");
+            header("Location: login.php");
             exit();
         }
         $stmt->close();
@@ -74,7 +74,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         exit();
     } else {
         $_SESSION['error_message'] = "Error during registration: " . $stmt->error;
-        header("Location: signup.php");
+        header("Location: login.php");
         exit();
     }
 
@@ -82,7 +82,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     closeDbConnection($conn);
 } else {
     // If accessed directly without POST request
-    header("Location: signup.php");
+    header("Location: login.php");
     exit();
 }
 ?>

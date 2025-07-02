@@ -139,7 +139,7 @@ if (isset($_COOKIE['remember_user_id']) && !isset($_SESSION['user_id'])) {
     }
 
     .forgot {
-      color: #8b1e1e; /* Dark red link */
+      color: #1a53ff; /* Dark red link */
       text-decoration: none;
       font-weight: 500;
       transition: color 0.3s ease;
