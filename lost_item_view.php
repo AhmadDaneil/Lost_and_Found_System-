@@ -169,7 +169,7 @@ function formatStatus($status) {
 
     .item-image-box {
       width: 100%;
-      height: 300px;
+      height: 700px;
       background-color: #e0e0e0;
       border-radius: 10px;
       display: flex;
