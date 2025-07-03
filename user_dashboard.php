@@ -645,16 +645,12 @@ function formatStatus($status) {
                     <div class="user-name"><?php echo htmlspecialchars($user_full_name); ?></div>
                     <div class="user-email"><?php echo htmlspecialchars($_SESSION['email'] ?? ''); ?></div>
                     <?php if (!empty($user_telegram)): ?>
-                    <a href="https://t.me/<?php echo htmlspecialchars(ltrim($user_telegram, '@')); ?>" target="_blank" class="telegram-link-btn">
-                        <i class="fab fa-telegram-plane"></i> Message on Telegram
-                    </a>
                     <?php endif; ?>
                 </div>
             </div>
             <nav class="navigation">
                 <ul>
                     <li><a href="homepage.php" class="active"><i class="fas fa-home"></i> Home</a></li>
-                    <li><a href="user_dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
                     <li><a href="profile.php"><i class="fas fa-user"></i> Profile</a></li>
                     <li><a href="settings.php"><i class="fas fa-cog"></i> Settings</a></li>
                     <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
@@ -714,9 +710,9 @@ function formatStatus($status) {
                                             <a href="report_<?php echo htmlspecialchars($item['type']); ?>_form.php?id=<?php echo htmlspecialchars($item['id']); ?>" class="edit-btn">Edit</a>
                                         <?php endif; ?>
                                         <?php if ($item['type'] === 'lost' && $item['status'] === 'not_found'): ?>
-                                            <a href="#" onclick="showConfirmation('found', <?php echo htmlspecialchars($item['id']); ?>, 'lost')" class="mark-found-btn">Mark Found</a>
+                                            
                                         <?php elseif ($item['type'] === 'found' && $item['status'] === 'unclaimed'): ?>
-                                            <a href="#" onclick="showConfirmation('claimed', <?php echo htmlspecialchars($item['id']); ?>, 'found')" class="mark-claimed-btn">Mark Claimed</a>
+                                            
                                         <?php endif; ?>
                                     </td>
                                 </tr>
@@ -754,16 +750,6 @@ function formatStatus($status) {
                 </section>
             </div>
         </main>
-    </div>
-
-    <!-- Confirmation Modal -->
-    <div id="confirmationModal" class="message-box">
-        <h3>Are you sure?</h3>
-        <p id="confirmationMessage"></p>
-        <div class="button-group">
-            <button class="confirm-btn" id="confirmAction">Yes</button>
-            <button class="cancel-btn" onclick="hideConfirmation()">No</button>
-        </div>
     </div>
 
     <script>

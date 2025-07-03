@@ -193,11 +193,6 @@ closeDbConnection($conn);
         opacity: 1;
     }
 
-    .profile-image-container .upload-icon-overlay i {
-        color: white;
-        font-size: 30px;
-    }
-
     .profile-image-container input[type="file"] {
         display: none;
     }
@@ -469,7 +464,7 @@ closeDbConnection($conn);
 
   <div class="edit-form-container" id="editProfileSection">
     <h2>Edit Profile</h2>
-    <form action="update_profile.php" method="POST" enctype="multipart/form-data">
+    <form action="process_profile_update.php" method="POST" enctype="multipart/form-data"> <!-- Corrected action -->
       <input type="file" id="profile_image_upload" name="profile_image" accept="image/*" style="display: none;">
 
       <div class="form-group">
@@ -502,7 +497,6 @@ closeDbConnection($conn);
         <div class="gender-options">
             <label><input type="radio" name="gender" value="Male" <?php echo ($user_details['gender'] ?? '') === 'Male' ? 'checked' : ''; ?>> Male</label>
             <label><input type="radio" name="gender" value="Female" <?php echo ($user_details['gender'] ?? '') === 'Female' ? 'checked' : ''; ?>> Female</label>
-            <label><input type="radio" name="gender" value="Other" <?php echo ($user_details['gender'] ?? '') === 'Other' ? 'checked' : ''; ?>> Other</label>
         </div>
       </div>
 

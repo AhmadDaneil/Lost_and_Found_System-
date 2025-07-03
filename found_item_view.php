@@ -521,9 +521,9 @@ function formatStatus($status) {
     <?php endif; ?>
 
     <?php if (!empty($reporter_telegram) && !$is_owner): // Only show chat button if not the owner and telegram is available ?>
-        <a href="https://t.me/<?php echo htmlspecialchars(ltrim($reporter_telegram, '@')); ?>" target="_blank" class="chat-btn">
-            <i class="fab fa-telegram-plane"></i> Chat with Reporter
-        </a>
+    <a href="<?php echo 'https://t.me/' . htmlspecialchars(ltrim($reporter_telegram, '@')); ?>" target="_blank" class="chat-btn">
+        <i class="fab fa-telegram-plane"></i> Chat with Reporter
+    </a>
     <?php endif; ?>
   </div>
 

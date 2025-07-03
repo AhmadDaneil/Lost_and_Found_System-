@@ -10,7 +10,7 @@ ini_set('display_errors', 1);
 // Check if user is logged in, if not, redirect to login page
 if (!isset($_SESSION['user_id'])) {
     $_SESSION['error_message'] = "You must be logged in to view your profile.";
-    header("Location: login.php"); // Updated from login.html to login.php
+    header("Location: login.php");
     exit();
 }
 
@@ -193,11 +193,6 @@ closeDbConnection($conn);
         opacity: 1;
     }
 
-    .profile-image-container .upload-icon-overlay i {
-        color: white;
-        font-size: 30px;
-    }
-
     .profile-image-container input[type="file"] {
         display: none;
     }
@@ -293,19 +288,6 @@ closeDbConnection($conn);
         gap: 15px;
     }
 
-    .edit-form-container input[type="text"],
-    .edit-form-container input[type="email"],
-    .edit-form-container input[type="tel"],
-    .edit-form-container select {
-        width: 100%;
-        padding: 12px 15px;
-        border: 1px solid #ccc;
-        border-radius: 8px;
-        font-size: 16px;
-        background-color: white;
-        color: #333;
-    }
-
     .edit-form-container .form-group {
         text-align: left;
     }
@@ -314,6 +296,20 @@ closeDbConnection($conn);
         display: block;
         margin-bottom: 5px;
         font-weight: 600;
+        color: #333;
+    }
+
+    .edit-form-container input[type="text"],
+    .edit-form-container input[type="email"],
+    .edit-form-container input[type="tel"],
+    .edit-form-container input[type="password"], /* Added password input type */
+    .edit-form-container select {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 16px;
+        background-color: white;
         color: #333;
     }
 
@@ -469,7 +465,7 @@ closeDbConnection($conn);
 
   <div class="edit-form-container" id="editProfileSection">
     <h2>Edit Profile</h2>
-    <form action="update_profile.php" method="POST" enctype="multipart/form-data">
+    <form action="process_profile_update.php" method="POST" enctype="multipart/form-data">
       <input type="file" id="profile_image_upload" name="profile_image" accept="image/*" style="display: none;">
 
       <div class="form-group">
@@ -502,7 +498,6 @@ closeDbConnection($conn);
         <div class="gender-options">
             <label><input type="radio" name="gender" value="Male" <?php echo ($user_details['gender'] ?? '') === 'Male' ? 'checked' : ''; ?>> Male</label>
             <label><input type="radio" name="gender" value="Female" <?php echo ($user_details['gender'] ?? '') === 'Female' ? 'checked' : ''; ?>> Female</label>
-            <label><input type="radio" name="gender" value="Other" <?php echo ($user_details['gender'] ?? '') === 'Other' ? 'checked' : ''; ?>> Other</label>
         </div>
       </div>
 
@@ -512,6 +507,20 @@ closeDbConnection($conn);
           <label for="remove_photo_flag">Remove current profile photo</label>
       </div>
       <?php endif; ?>
+
+      <h3 style="margin-top: 30px; margin-bottom: 15px; color: #333; font-size: 20px; text-align: left; border-top: 1px solid #eee; padding-top: 20px;">Change Password</h3>
+      <div class="form-group">
+        <label for="current_password">Current Password</label>
+        <input type="password" id="current_password" name="current_password" />
+      </div>
+      <div class="form-group">
+        <label for="new_password">New Password</label>
+        <input type="password" id="new_password" name="new_password" />
+      </div>
+      <div class="form-group">
+        <label for="confirm_new_password">Confirm New Password</label>
+        <input type="password" id="confirm_new_password" name="confirm_new_password" />
+      </div>
 
       <button type="submit" class="save-changes-btn">Save Changes</button>
       <button type="button" class="cancel-edit-btn" onclick="hideEditForm()">Cancel</button>
@@ -527,6 +536,10 @@ closeDbConnection($conn);
     function hideEditForm() {
       document.getElementById('viewProfileSection').style.display = 'block';
       document.getElementById('editProfileSection').style.display = 'none';
+      // Clear password fields when hiding the form
+      document.getElementById('current_password').value = '';
+      document.getElementById('new_password').value = '';
+      document.getElementById('confirm_new_password').value = '';
     }
 
     // Handle profile image upload preview
