@@ -8,11 +8,27 @@ ini_set('display_errors', 1);
 
 if (!isset($_SESSION['user_id'])) {
     $_SESSION['error_message'] = "You must be logged in to access settings.";
-    header("Location: login.html");
+    header("Location: login.php"); // Changed to login.php
     exit();
 }
 
 $user_full_name = $_SESSION['full_name'] ?? 'User';
+
+// Fetch user profile image path for display
+$user_profile_image_path = '';
+$conn = getDbConnection();
+$stmt = $conn->prepare("SELECT profile_image_path FROM users WHERE id = ?");
+if ($stmt) {
+    $stmt->bind_param("i", $_SESSION['user_id']);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($row = $result->fetch_assoc()) {
+        $user_profile_image_path = $row['profile_image_path'];
+    }
+    $stmt->close();
+}
+closeDbConnection($conn);
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -21,6 +37,7 @@ $user_full_name = $_SESSION['full_name'] ?? 'User';
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Settings - FoundIt</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
     html {
       font-size: 16px; /* Default base font size */
@@ -36,156 +53,181 @@ $user_full_name = $_SESSION['full_name'] ?? 'User';
     body {
       background-color: #f5ff9c;
       padding: 1.25rem;
+      display: block; /* Override flex from unified_styles.css body */
+      height: auto;
     }
 
     .header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 1.875rem;
+      margin-bottom: 1.875rem; /* 30px */
     }
 
     .logo {
-      font-size: 2rem;
+      font-size: 2rem; /* 32px */
       font-weight: 800;
-      text-shadow: 2px 2px 2px rgba(0, 0, 0, 0.1);
     }
 
     .icon-btn {
-      width: 2.375rem;
-      height: 2.375rem;
+      width: 2.375rem; /* 38px */
+      height: 2.375rem; /* 38px */
       border-radius: 50%;
       background-color: white;
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 0.125rem solid #000;
+      border: 2px solid #000;
       cursor: pointer;
       transition: all 0.3s ease;
+      color: #000;
+      font-size: 1.125rem; /* 18px */
+      text-decoration: none; /* For a tag */
     }
 
     .icon-btn:hover {
       background-color: #000;
+      color: #f5ff9c;
       transform: scale(1.1);
-    }
-
-    .icon-btn:hover svg {
-      fill: #f5ff9c;
-    }
-
-    .icon-btn svg {
-      width: 1.25rem;
-      height: 1.25rem;
-      fill: #000;
-      transition: fill 0.3s ease;
     }
 
     .settings-container {
       background-color: #fffdd0;
-      padding: 1.875rem;
-      border-radius: 1rem;
-      max-width: 600px;
-      margin: 0 auto;
+      padding: 1.875rem; /* 30px */
+      border-radius: 1rem; /* 16px */
+      max-width: 37.5rem; /* 600px */
+      margin: 1.25rem auto; /* 20px auto */
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-      position: relative;
     }
 
     .settings-header {
       display: flex;
       align-items: center;
-      justify-content: center;
-      margin-bottom: 1.875rem;
-      position: relative;
+      margin-bottom: 1.875rem; /* 30px */
     }
 
-    .settings-title {
-      font-size: 1.5rem;
-      font-weight: 600;
-      text-align: center;
+    .settings-header .back-btn {
+      margin-right: 1.25rem; /* 20px */
+      width: 2.375rem;
+      height: 2.375rem;
+      font-size: 1.125rem;
     }
 
-    .back-btn {
-      position: absolute;
-      left: 0;
-      top: 0;
+    .settings-header .settings-title {
+      font-size: 2rem; /* 32px */
+      font-weight: 700;
+      color: #333;
+    }
+
+    .profile-link {
+        text-decoration: none;
+        color: inherit;
     }
 
     .setting-tile {
       background-color: white;
-      padding: 1.25rem;
-      border-radius: 0.75rem;
-      margin-bottom: 0.9375rem;
+      padding: 1.25rem; /* 20px */
+      border-radius: 0.75rem; /* 12px */
+      margin-bottom: 1.25rem; /* 20px */
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      justify-content: space-between;
+      transition: transform 0.2s ease;
+    }
+
+    .setting-tile:hover {
+      transform: translateY(-3px);
+    }
+
+    .profile-box {
+      gap: 1.25rem; /* 20px */
+    }
+
+    .profile-img {
+      width: 3.75rem; /* 60px */
+      height: 3.75rem; /* 60px */
+      background-color: #8b1e1e;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.875rem; /* 30px */
+      color: white;
+      overflow: hidden;
+      border: 2px solid #ccc;
+    }
+
+    .profile-img img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .profile-texts {
+      flex-grow: 1;
+      text-align: left;
     }
 
     .setting-title {
-      font-size: 1.125rem;
+      font-size: 1.25rem; /* 20px */
       font-weight: 600;
       color: #333;
     }
 
     .setting-sub {
-      font-size: 0.875rem;
-      color: #666;
-    }
-
-    .profile-box {
-      display: flex;
-      align-items: center;
-      gap: 0.9375rem;
-      text-decoration: none;
-      color: inherit;
-    }
-
-    .profile-img {
-      width: 3.125rem;
-      height: 3.125rem;
-      border-radius: 50%;
-      background-color: #8b1e1e;
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-      font-size: 1.5rem;
-      overflow: hidden;
-    }
-
-    .profile-img img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .profile-texts {
-      flex-grow: 1;
+      font-size: 0.875rem; /* 14px */
+      color: #777;
     }
 
     .font-size-slider {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
       flex-grow: 1;
+      text-align: right;
     }
 
     .font-size-slider input[type="range"] {
       width: 100%;
-      margin-bottom: 0.3125rem;
+      max-width: 12.5rem; /* 200px */
+      -webkit-appearance: none;
+      height: 8px;
+      background: #ddd;
+      border-radius: 5px;
+      outline: none;
+      opacity: 0.7;
+      -webkit-transition: .2s;
+      transition: opacity .2s;
+    }
+
+    .font-size-slider input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #8b1e1e;
+      cursor: pointer;
+    }
+
+    .font-size-slider input[type="range"]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #8b1e1e;
+      cursor: pointer;
     }
 
     .font-size-slider small {
-      font-size: 0.75rem;
+      display: block;
+      margin-top: 0.5rem; /* 8px */
       color: #777;
+      font-size: 0.75rem; /* 12px */
     }
 
     .toggle-switch {
       position: relative;
       display: inline-block;
-      width: 3.125rem;
-      height: 1.75rem;
+      width: 3.75rem; /* 60px */
+      height: 2.125rem; /* 34px */
     }
 
     .toggle-switch input {
@@ -203,16 +245,16 @@ $user_full_name = $_SESSION['full_name'] ?? 'User';
       bottom: 0;
       background-color: #ccc;
       transition: .4s;
-      border-radius: 1.75rem;
+      border-radius: 2.125rem; /* 34px */
     }
 
     .slider:before {
       position: absolute;
       content: "";
-      height: 1.25rem;
-      width: 1.25rem;
-      left: 0.25rem;
-      bottom: 0.25rem;
+      height: 1.625rem; /* 26px */
+      width: 1.625rem; /* 26px */
+      left: 0.25rem; /* 4px */
+      bottom: 0.25rem; /* 4px */
       background-color: white;
       transition: .4s;
       border-radius: 50%;
@@ -222,28 +264,129 @@ $user_full_name = $_SESSION['full_name'] ?? 'User';
       background-color: #8b1e1e;
     }
 
+    input:focus + .slider {
+      box-shadow: 0 0 1px #8b1e1e;
+    }
+
     input:checked + .slider:before {
-      transform: translateX(1.375rem);
+      transform: translateX(1.625rem); /* 26px */
     }
 
-    .message {
-      padding: 0.625rem;
-      margin-bottom: 0.9375rem;
-      border-radius: 0.3125rem;
+    .logout-btn {
+      background-color: #dc3545;
+      color: white;
+      padding: 0.75rem 1.25rem; /* 12px 20px */
+      border: none;
+      border-radius: 0.5rem; /* 8px */
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      display: block;
+      width: 100%;
+      margin-top: 1.25rem; /* 20px */
+      text-decoration: none; /* For a tag */
       text-align: center;
-      font-weight: 500;
     }
 
-    .message.success {
-      background-color: #d4edda;
-      color: #155724;
-      border: 1px solid #c3e6cb;
+    .logout-btn:hover {
+      background-color: #c82333;
     }
 
-    .message.error {
-      background-color: #f8d7da;
-      color: #721c24;
-      border: 1px solid #f5c6cb;
+    /* Dark Mode Styles */
+    .dark-mode {
+      background-color: #333 !important;
+      color: #eee;
+    }
+    .dark-mode .settings-container,
+    .dark-mode .setting-tile,
+    .dark-mode .profile-img,
+    .dark-mode .slider:before {
+      background-color: #555 !important;
+      color: #eee !important;
+    }
+    .dark-mode .logo,
+    .dark-mode .settings-title,
+    .dark-mode .setting-title,
+    .dark-mode .setting-sub {
+      color: #eee !important;
+    }
+    .dark-mode .icon-btn {
+      background-color: #555 !important;
+      border-color: #eee !important;
+    }
+    .dark-mode .icon-btn svg {
+      fill: #eee !important;
+    }
+    .dark-mode .icon-btn:hover {
+      background-color: #eee !important;
+      color: #555 !important;
+    }
+    .dark-mode .icon-btn:hover svg {
+      fill: #555 !important;
+    }
+    .dark-mode .font-size-slider input[type="range"] {
+      background: #777;
+    }
+    .dark-mode .font-size-slider input[type="range"]::-webkit-slider-thumb {
+      background: #eee;
+    }
+    .dark-mode .font-size-slider input[type="range"]::-moz-range-thumb {
+      background: #eee;
+    }
+    .dark-mode .slider {
+      background-color: #777;
+    }
+    input:checked + .slider.dark-mode-checked {
+      background-color: #8b1e1e; /* Keep original accent color for checked state */
+    }
+
+
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+      body {
+        padding: 15px;
+      }
+      .header {
+        margin-bottom: 20px;
+      }
+      .logo {
+        font-size: 28px;
+      }
+      .icon-btn {
+        width: 34px;
+        height: 34px;
+        font-size: 16px;
+      }
+      .settings-container {
+        padding: 20px;
+        margin: 10px auto;
+      }
+      .settings-header .settings-title {
+        font-size: 24px;
+      }
+      .setting-tile {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .profile-box {
+        flex-direction: row; /* Keep profile image and text side-by-side */
+        align-items: center;
+      }
+      .profile-texts {
+        text-align: left;
+      }
+      .font-size-slider {
+        text-align: left;
+        width: 100%;
+      }
+      .font-size-slider input[type="range"] {
+        max-width: 100%;
+      }
+      .logout-btn {
+        padding: 10px 15px;
+        font-size: 0.95rem;
+      }
     }
   </style>
 </head>
@@ -252,16 +395,15 @@ $user_full_name = $_SESSION['full_name'] ?? 'User';
   <div class="header">
     <div class="logo">FoundIt</div>
     <a href="homepage.php" class="icon-btn" title="Home">
-      <svg viewBox="0 0 24 24">
-        <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-6v-6H10v6H4a1 1 0 0 1-1-1V9.5z"/>
-      </svg>
+      <svg fill="#000000" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
     </a>
   </div>
 
   <div class="settings-container">
 
+    <!-- Header with Back and Title -->
     <div class="settings-header">
-      <a href="homepage.php" class="icon-btn back-btn" title="Back to Home">
+      <a href="homepage.php" class="icon-btn back-btn" title="Back">
         <svg viewBox="0 0 24 24">
           <path d="M15 18l-6-6 6-6"/>
         </svg>
@@ -269,21 +411,15 @@ $user_full_name = $_SESSION['full_name'] ?? 'User';
       <div class="settings-title">Settings</div>
     </div>
 
-    <?php if (isset($_SESSION['success_message'])): ?>
-      <div class="message success">
-        <?php echo $_SESSION['success_message']; unset($_SESSION['success_message']); ?>
-      </div>
-    <?php endif; ?>
-    <?php if (isset($_SESSION['error_message'])): ?>
-      <div class="message error">
-        <?php echo $_SESSION['error_message']; unset($_SESSION['error_message']); ?>
-      </div>
-    <?php endif; ?>
-
+    <!-- Profile -->
     <a href="profile.php" class="profile-link">
       <div class="setting-tile profile-box">
         <div class="profile-img">
-          <?php echo htmlspecialchars(strtoupper(substr($user_full_name, 0, 1))); ?>
+            <?php if (!empty($user_profile_image_path) && file_exists($user_profile_image_path)): ?>
+                <img src="<?php echo htmlspecialchars(BASE_URL . $user_profile_image_path); ?>" alt="Profile Photo">
+            <?php else: ?>
+                <?php echo htmlspecialchars(substr($user_full_name, 0, 1)); ?>
+            <?php endif; ?>
         </div>
         <div class="profile-texts">
           <div class="setting-title"><?php echo htmlspecialchars($user_full_name); ?></div>
@@ -292,6 +428,7 @@ $user_full_name = $_SESSION['full_name'] ?? 'User';
       </div>
     </a>
 
+    <!-- Font Size -->
     <div class="setting-tile">
       <div class="setting-title">Font Size</div>
       <div class="font-size-slider">
@@ -300,53 +437,42 @@ $user_full_name = $_SESSION['full_name'] ?? 'User';
       </div>
     </div>
 
+    <!-- Dark Mode -->
     <div class="setting-tile">
       <div class="setting-title">Dark Mode</div>
       <label class="toggle-switch">
         <input type="checkbox" id="darkModeToggle">
-        <span class="slider"></span>
+        <span class="slider round"></span>
       </label>
     </div>
 
-    <div class="setting-tile">
-      <div class="setting-title">Notifications</div>
-      <label class="toggle-switch">
-        <input type="checkbox" checked>
-        <span class="slider"></span>
-      </label>
-    </div>
-
-    <div class="setting-tile">
-      <div class="setting-title">About Us</div>
-      <a href="#" class="setting-sub" onclick="alert('FoundIt App - Version 1.0. Developed to help you find and report lost and found items easily.')">Learn more</a>
-    </div>
-
-    <div class="setting-tile">
-      <div class="setting-title">Help & Support</div>
-      <a href="https://t.me/+ma-FOEPB6wg0ZDU9" target="_blank" class="setting-sub">FoundIt telegram group</a>
-    </div>
-
+    <!-- Logout Button -->
+    <a href="logout.php" class="logout-btn">Logout</a>
   </div>
 
   <script>
+    // Font Size Adjustment
     const fontSizeSlider = document.getElementById('fontSizeSlider');
-    const html = document.documentElement;
+    const htmlElement = document.documentElement; // Target the root html element
 
+    // Load saved font size
     const savedFontSize = localStorage.getItem('fontSize');
     if (savedFontSize) {
-      html.style.fontSize = savedFontSize + 'px';
+      htmlElement.style.fontSize = savedFontSize + 'px';
       fontSizeSlider.value = savedFontSize;
     }
 
-    fontSizeSlider.addEventListener('input', function () {
-      const newSize = this.value;
-      html.style.fontSize = newSize + 'px';
-      localStorage.setItem('fontSize', newSize);
+    fontSizeSlider.addEventListener('input', function() {
+      const newFontSize = this.value;
+      htmlElement.style.fontSize = newFontSize + 'px';
+      localStorage.setItem('fontSize', newFontSize);
     });
 
+    // Dark Mode Toggle
     const darkModeToggle = document.getElementById('darkModeToggle');
     const body = document.body;
 
+    // Load saved dark mode preference
     const savedDarkMode = localStorage.getItem('darkMode');
     if (savedDarkMode === 'enabled') {
       body.classList.add('dark-mode');
@@ -363,6 +489,7 @@ $user_full_name = $_SESSION['full_name'] ?? 'User';
       }
     });
 
+    // Dynamic style for dark mode to ensure it applies correctly
     const style = document.createElement('style');
     style.innerHTML = `
       .dark-mode {
@@ -391,19 +518,31 @@ $user_full_name = $_SESSION['full_name'] ?? 'User';
       }
       .dark-mode .icon-btn:hover {
         background-color: #eee !important;
+        color: #555 !important;
       }
       .dark-mode .icon-btn:hover svg {
         fill: #555 !important;
       }
+      .dark-mode .font-size-slider input[type="range"] {
+        background: #777;
+      }
+      .dark-mode .font-size-slider input[type="range"]::-webkit-slider-thumb {
+        background: #eee;
+      }
+      .dark-mode .font-size-slider input[type="range"]::-moz-range-thumb {
+        background: #eee;
+      }
       .dark-mode .slider {
         background-color: #777;
       }
-      input:checked + .slider {
-        background-color: #a04040;
+      input:checked + .slider { /* This targets the checked state for the slider */
+        background-color: #8b1e1e; /* Keep original accent color for checked state */
       }
     `;
     document.head.appendChild(style);
   </script>
+
+  <?php include 'message_modal.php'; ?>
 
 </body>
 </html>

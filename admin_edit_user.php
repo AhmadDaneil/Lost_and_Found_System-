@@ -10,7 +10,7 @@ ini_set('display_errors', 1);
 // Check if user is logged in and is an admin
 if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
     $_SESSION['error_message'] = "Unauthorized access. You must be logged in as an administrator.";
-    header("Location: login.html");
+    header("Location: login.php"); // Updated from login.html to login.php
     exit();
 }
 
@@ -193,6 +193,25 @@ if ($user_id_to_edit) {
     .back-to-users:hover svg {
         fill: #555;
     }
+
+    /* Message styling */
+    .message {
+        padding: 10px;
+        margin-bottom: 15px;
+        border-radius: 5px;
+        text-align: center;
+        font-weight: 500;
+    }
+    .message.success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    .message.error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
   </style>
 </head>
 <body>
@@ -203,6 +222,18 @@ if ($user_id_to_edit) {
     </header>
 
     <h2>Edit User: <?php echo htmlspecialchars($user_details['full_name'] ?? 'N/A'); ?></h2>
+
+    <!-- Display success/error messages from session -->
+    <?php if (isset($_SESSION['success_message'])): ?>
+      <div class="message success">
+        <?php echo $_SESSION['success_message']; unset($_SESSION['success_message']); ?>
+      </div>
+    <?php endif; ?>
+    <?php if (isset($_SESSION['error_message'])): ?>
+      <div class="message error">
+        <?php echo $_SESSION['error_message']; unset($_SESSION['error_message']); ?>
+      </div>
+    <?php endif; ?>
 
     <form action="admin_update_user.php" method="POST">
       <input type="hidden" name="user_id" value="<?php echo htmlspecialchars($user_details['id']); ?>">

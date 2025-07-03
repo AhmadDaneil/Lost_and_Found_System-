@@ -10,7 +10,7 @@ ini_set('display_errors', 1);
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
     $_SESSION['error_message'] = "You must be logged in to view item details.";
-    header("Location: login.html");
+    header("Location: login.php"); // Updated from login.html to login.php
     exit();
 }
 
@@ -77,6 +77,7 @@ function formatStatus($status, $item_type) {
             case 'not_found': return '❌ Not found';
             case 'found': return '✅ Found';
             case 'pending_approval': return '⏳ Pending Approval';
+            case 'rejected': return '🚫 Rejected'; // Added rejected status
             default: return $status;
         }
     } else { // found_items
@@ -84,6 +85,7 @@ function formatStatus($status, $item_type) {
             case 'unclaimed': return '❌ Unclaimed';
             case 'claimed': return '✅ Claimed by owner';
             case 'pending_approval': return '⏳ Pending Approval';
+            case 'rejected': return '🚫 Rejected'; // Added rejected status
             default: return $status;
         }
     }
@@ -377,7 +379,7 @@ function formatStatus($status, $item_type) {
 
     <?php if ($is_owner): // Show edit button only if current user is the owner ?>
     <!-- Edit Button (links to the specific item's edit page) -->
-    <a href="<?php echo htmlspecialchars($item_type); ?>_item.html?id=<?php echo htmlspecialchars($item_id); ?>" class="edit-btn" title="Edit <?php echo ucfirst($item_type); ?> Item">
+    <a href="report_<?php echo htmlspecialchars($item_type); ?>_form.php?id=<?php echo htmlspecialchars($item_id); ?>" class="edit-btn" title="Edit <?php echo ucfirst($item_type); ?> Item">
       <svg viewBox="0 0 24 24">
         <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM21.71 6.04a1.003 1.003 0 0 0 0-1.41l-2.34-2.34a1.003 1.003 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
       </svg>
@@ -445,6 +447,8 @@ function formatStatus($status, $item_type) {
 
   <script>
     let currentStatusAction = '';
+    const itemId = <?php echo json_encode($item_id); ?>;
+    const itemType = <?php echo json_encode($item_type); ?>;
 
     function showConfirmation(action) {
       currentStatusAction = action;
@@ -465,7 +469,7 @@ function formatStatus($status, $item_type) {
     document.getElementById('confirmAction').addEventListener('click', function() {
       hideConfirmation();
       // Redirect to update status script with item ID, type, and new status
-      window.location.href = `update_item_status.php?id=<?php echo htmlspecialchars($item_id); ?>&type=<?php echo htmlspecialchars($item_type); ?>&new_status=${currentStatusAction}`;
+      window.location.href = `update_item_status.php?id=${itemId}&type=${itemType}&new_status=${currentStatusAction}`;
     });
   </script>
 

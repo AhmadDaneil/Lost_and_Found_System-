@@ -10,12 +10,11 @@ ini_set('display_errors', 1);
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
     $_SESSION['error_message'] = "You must be logged in to view item details.";
-    header("Location: login.html");
+    header("Location: login.php"); // Updated from login.html to login.php
     exit();
 }
 
 $item_id = $_GET['id'] ?? null;
-$item_type = 'lost'; // Explicitly set for this page
 
 $item_details = null;
 $reporter_telegram = null;
@@ -24,12 +23,8 @@ $is_owner = false; // Flag to check if the logged-in user is the item owner
 if ($item_id) {
     $conn = getDbConnection();
 
-    $table = 'lost_items';
-    $date_field = 'date_lost';
-    $location_field = 'lost_location';
-
     // Fetch item details and reporter's Telegram username
-    $stmt = $conn->prepare("SELECT i.id, i.item_name, i.description, i.$date_field, i.$location_field, i.category, i.image_path, i.status, i.user_id, u.telegram_username FROM $table i JOIN users u ON i.user_id = u.id WHERE i.id = ?");
+    $stmt = $conn->prepare("SELECT li.id, li.item_name, li.description, li.date_lost, li.lost_location, li.category, li.image_path, li.status, li.user_id, u.telegram_username FROM lost_items li JOIN users u ON li.user_id = u.id WHERE li.id = ?");
     $stmt->bind_param("i", $item_id);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -37,9 +32,8 @@ if ($item_id) {
     if ($result->num_rows === 1) {
         $item_details = $result->fetch_assoc();
         $reporter_telegram = $item_details['telegram_username'];
-
         // Check if the logged-in user is the owner of this item
-        if ($_SESSION['user_id'] == $item_details['user_id']) {
+        if ($item_details['user_id'] == $_SESSION['user_id']) {
             $is_owner = true;
         }
     } else {
@@ -47,11 +41,10 @@ if ($item_id) {
         header("Location: homepage.php");
         exit();
     }
-
     $stmt->close();
     closeDbConnection($conn);
 } else {
-    $_SESSION['error_message'] = "No lost item ID provided.";
+    $_SESSION['error_message'] = "Invalid item ID provided.";
     header("Location: homepage.php");
     exit();
 }
@@ -59,10 +52,11 @@ if ($item_id) {
 // Function to format status for display
 function formatStatus($status) {
     switch ($status) {
-        case 'not_found': return '❌ Not found';
+        case 'not_found': return '❌ Not Found';
         case 'found': return '✅ Found';
         case 'pending_approval': return '⏳ Pending Approval';
-        default: return $status;
+        case 'rejected': return '🚫 Rejected';
+        default: return ucfirst(str_replace('_', ' ', $status));
     }
 }
 ?>
@@ -71,10 +65,10 @@ function formatStatus($status) {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Lost Item - FoundIt</title>
+  <title><?php echo htmlspecialchars($item_details['item_name']); ?> - FoundIt</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
-    /* Your existing CSS for lost_item_view.html */
     * {
       margin: 0;
       padding: 0;
@@ -85,6 +79,10 @@ function formatStatus($status) {
     body {
       background-color: #f5ff9c;
       padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
     }
 
     .header {
@@ -92,6 +90,8 @@ function formatStatus($status) {
       justify-content: space-between;
       align-items: center;
       margin-bottom: 30px;
+      width: 100%;
+      max-width: 800px;
     }
 
     .logo {
@@ -118,229 +118,344 @@ function formatStatus($status) {
       border: 2px solid #000;
       cursor: pointer;
       transition: all 0.3s ease;
+      color: #000;
+      font-size: 18px;
+      text-decoration: none;
     }
 
     .icon-btn:hover,
     .back-btn:hover,
     .edit-btn:hover {
       background-color: #000;
+      color: #f5ff9c;
       transform: scale(1.1);
-    }
-
-    .icon-btn:hover svg,
-    .back-btn:hover svg,
-    .edit-btn:hover svg {
-      fill: #f5ff9c;
-    }
-
-    .icon-btn svg,
-    .back-btn svg,
-    .edit-btn svg {
-      width: 20px;
-      height: 20px;
-      fill: #000;
-      transition: fill 0.3s ease;
     }
 
     .content-box {
       background-color: #fffdd0;
       padding: 30px;
-      border-radius: 16px;
-      max-width: 900px;
-      margin: 0 auto;
+      border-radius: 15px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 800px;
       position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
     }
 
     .back-btn {
       position: absolute;
       top: 20px;
       left: 20px;
+      z-index: 10;
     }
 
     .edit-btn {
-      position: absolute;
-      top: 20px;
-      right: 20px;
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 10;
+        background-color: #ffc107; /* Yellow for edit */
+        border-color: #ffc107;
+        color: #333;
     }
 
-    .section-title {
-      text-align: center;
-      font-weight: 600;
-      margin-bottom: 30px;
-      font-size: 20px;
+    .edit-btn:hover {
+        background-color: #e0a800;
+        border-color: #e0a800;
+        color: white;
     }
 
-    .top-content {
-      display: flex;
-      gap: 30px;
-      flex-wrap: wrap;
-    }
-
-    .image-box {
-      background-color: #8b1e1e;
-      color: #fff;
-      width: 180px;
-      height: 200px;
+    .item-image-box {
+      width: 100%;
+      height: 300px;
+      background-color: #e0e0e0;
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 18px;
-      border-radius: 12px;
       overflow: hidden;
+      margin-bottom: 20px;
     }
 
-    .image-box img {
+    .item-image-box img {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
 
-    .details-box {
-      flex: 1;
-      background-color: white;
-      padding: 20px;
-      border-radius: 12px;
+    .item-image-box span {
+        color: #666;
+        font-size: 1.2em;
+    }
+
+    .item-details {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .item-details h2 {
+      font-size: 32px;
+      color: #333;
+      margin-bottom: 5px;
+    }
+
+    .item-details p {
+      font-size: 16px;
+      color: #555;
+      line-height: 1.5;
+    }
+
+    .item-details .detail-row {
       display: flex;
       justify-content: space-between;
-      flex-direction: column;
-    }
-
-    .details-box h3 {
-      font-size: 20px;
-      margin-bottom: 8px;
-    }
-
-    .details-box p {
-      font-size: 14px;
-      color: #444;
-      line-height: 1.4;
-    }
-
-    .details-date {
-      text-align: right;
-      font-size: 14px;
+      font-size: 15px;
       color: #666;
     }
 
-    .description-box {
-      margin-top: 20px;
+    .item-details .detail-row span:first-child {
+      font-weight: 600;
+      color: #333;
+    }
+
+    .item-description {
       background-color: white;
       padding: 20px;
-      border-radius: 12px;
-      min-height: 100px;
-      font-size: 14px;
-      color: #444;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      margin-bottom: 20px;
+    }
+
+    .item-description h3 {
+      font-size: 20px;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .item-description p {
+      font-size: 16px;
+      color: #555;
+      line-height: 1.6;
+      white-space: pre-wrap; /* Preserve line breaks from textarea */
     }
 
     .status-box {
-      margin-top: 20px;
       background-color: white;
-      padding: 16px;
-      border-radius: 12px;
-      font-size: 14px;
-      color: #444;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .status-box p {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .status-display {
+      font-size: 24px;
+      font-weight: 700;
+      padding: 10px 20px;
+      border-radius: 8px;
+      display: inline-block;
+    }
+
+    .status-not_found {
+        background-color: #ffe0e0; /* Light red */
+        color: #d9534f; /* Darker red */
+    }
+
+    .status-found {
+        background-color: #e6ffe6; /* Light green */
+        color: #5cb85c; /* Darker green */
+    }
+
+    .status-pending_approval {
+        background-color: #fff3cd; /* Light yellow */
+        color: #f0ad4e; /* Darker yellow/orange */
+    }
+
+    .status-rejected {
+        background-color: #e9ecef; /* Light grey */
+        color: #6c757d; /* Darker grey */
+    }
+
+    .action-buttons {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      justify-content: center;
+      gap: 15px;
       flex-wrap: wrap;
     }
 
-    .status-box strong {
-      display: inline-block;
-      width: 60px;
-      color: #222;
+    .action-buttons button,
+    .action-buttons a {
+      padding: 12px 25px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      text-decoration: none;
+      color: white;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      justify-content: center;
     }
 
-    .status-update-btn {
-        background-color: #8b1e1e;
-        color: white;
-        border: none;
-        padding: 8px 15px;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: background-color 0.3s ease;
-        font-weight: 600;
-        margin-left: 10px; /* Space from status text */
+    .action-buttons .mark-found-btn {
+      background-color: #28a745; /* Green for found */
     }
 
-    .status-update-btn:hover {
-        background-color: #6a1515;
+    .action-buttons .mark-found-btn:hover {
+      background-color: #218838;
     }
 
-    /* Message Box for confirmations/errors */
+    .action-buttons .chat-btn {
+      background-color: #17a2b8; /* Info blue for chat */
+    }
+
+    .action-buttons .chat-btn:hover {
+      background-color: #138496;
+    }
+
+    /* Message Box / Confirmation Modal */
     .message-box {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background-color: #fffdd0;
-        border: 2px solid #8b1e1e;
-        padding: 30px;
-        border-radius: 15px;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-        z-index: 1000;
-        text-align: center;
-        max-width: 400px;
-        width: 90%;
         display: none; /* Hidden by default */
+        position: fixed; /* Stay in place */
+        z-index: 1000; /* Sit on top */
+        left: 0;
+        top: 0;
+        width: 100%; /* Full width */
+        height: 100%; /* Full height */
+        overflow: auto; /* Enable scroll if needed */
+        background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        display: flex; /* Use flexbox for centering */
+        align-items: center; /* Center vertically */
+        justify-content: center; /* Center horizontally */
     }
 
     .message-box h3 {
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 24px;
+    }
+
+    .message-box p {
+        color: #555;
         margin-bottom: 20px;
-        color: #8b1e1e;
+        font-size: 16px;
     }
 
     .message-box .button-group {
         display: flex;
         justify-content: center;
-        gap: 15px;
-        margin-top: 20px;
+        gap: 10px;
     }
 
-    .message-box button {
+    .message-box .confirm-btn,
+    .message-box .cancel-btn {
         padding: 10px 20px;
         border: none;
-        border-radius: 8px;
+        border-radius: 5px;
         cursor: pointer;
+        font-size: 16px;
         font-weight: 600;
         transition: background-color 0.3s ease;
     }
 
     .message-box .confirm-btn {
-        background-color: #4CAF50; /* Green */
+        background-color: #28a745;
         color: white;
     }
 
     .message-box .confirm-btn:hover {
-        background-color: #45a049;
+        background-color: #218838;
     }
 
     .message-box .cancel-btn {
-        background-color: #f44336; /* Red */
+        background-color: #dc3545;
         color: white;
     }
 
     .message-box .cancel-btn:hover {
-        background-color: #da190b;
+        background-color: #c82333;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+      body {
+        padding: 15px;
+      }
+      .header {
+        margin-bottom: 20px;
+      }
+      .logo {
+        font-size: 28px;
+      }
+      .icon-btn,
+      .back-btn,
+      .edit-btn {
+        width: 34px;
+        height: 34px;
+        font-size: 16px;
+      }
+      .content-box {
+        padding: 20px;
+        gap: 15px;
+      }
+      .back-btn, .edit-btn {
+        top: 15px;
+        left: 15px;
+        right: 15px;
+      }
+      .item-image-box {
+        height: 200px;
+      }
+      .item-details h2 {
+        font-size: 28px;
+      }
+      .item-details p,
+      .item-details .detail-row {
+        font-size: 14px;
+      }
+      .item-description h3 {
+        font-size: 18px;
+      }
+      .item-description p {
+        font-size: 14px;
+      }
+      .status-box p {
+        font-size: 16px;
+      }
+      .status-display {
+        font-size: 20px;
+        padding: 8px 15px;
+      }
+      .action-buttons button,
+      .action-buttons a {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+      }
     }
   </style>
 </head>
 <body>
-
   <div class="header">
     <div class="logo">FoundIt</div>
     <div class="icons">
-      <!-- Home Icon -->
       <a href="homepage.php" class="icon-btn" title="Home">
-        <svg viewBox="0 0 24 24">
-          <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-6v-6H10v6H4a1 1 0 0 1-1-1V9.5z"/>
-        </svg>
+        <svg fill="#000000" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
       </a>
-      <!-- Telegram Icon (General support, not item specific) -->
-      <a href="https://t.me/FoundItSupport" target="_blank" class="icon-btn" title="Chat on Telegram">
-        <svg viewBox="0 0 24 24">
-          <path d="M9.036 17.813c-.267 0-.224-.101-.316-.354l-1.105-3.641 8.506-5.375c.388-.264.747.084.58.526l-2.44 7.768c-.135.408-.355.51-.722.318l-2.006-1.478-0.97.936c-.1.1-.184.184-.378.184zM12 0C5.373 0 0 5.373 0 12c0 6.628 5.373 12 12 12 6.628 0 12-5.372 12-12 0-6.627-5.372-12-12-12z"/>
-        </svg>
+      <a href="user_dashboard.php" class="icon-btn" title="Dashboard">
+        <i class="fas fa-tachometer-alt"></i>
       </a>
     </div>
   </div>
@@ -353,57 +468,62 @@ function formatStatus($status) {
       </svg>
     </a>
 
-    <?php if ($is_owner): // Show edit button only if current user is the owner ?>
-    <!-- Edit Button (links to the specific item's edit page) -->
-    <a href="lost_item.html?id=<?php echo htmlspecialchars($item_id); ?>" class="edit-btn" title="Edit Lost Item">
-      <svg viewBox="0 0 24 24">
-        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM21.71 6.04a1.003 1.003 0 0 0 0-1.41l-2.34-2.34a1.003 1.003 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-      </svg>
+    <?php if ($is_owner && ($item_details['status'] !== 'found' && $item_details['status'] !== 'rejected')): ?>
+    <!-- Edit Button (only if current user is owner and item is not resolved/rejected) -->
+    <a href="report_lost_form.php?id=<?php echo htmlspecialchars($item_id); ?>" class="edit-btn" title="Edit Item">
+        <i class="fas fa-edit"></i>
     </a>
     <?php endif; ?>
 
-    <div class="section-title">Lost Item</div>
-
-    <div class="top-content">
-      <div class="image-box">
+    <div class="item-image-box">
         <?php if ($item_details['image_path'] && file_exists($item_details['image_path'])): ?>
             <img src="<?php echo htmlspecialchars(BASE_URL . $item_details['image_path']); ?>" alt="<?php echo htmlspecialchars($item_details['item_name']); ?>">
         <?php else: ?>
-            No Image
+            <span>No Image Available</span>
         <?php endif; ?>
-      </div>
+    </div>
 
-      <div class="details-box">
-        <div>
-          <h3><?php echo htmlspecialchars($item_details['item_name']); ?></h3>
-          <p>Category: <?php echo htmlspecialchars($item_details['category']); ?><br/>
-          Lost Location: <?php echo htmlspecialchars($item_details[$location_field]); ?></p>
-        </div>
-        <div class="details-date">Date: <?php echo htmlspecialchars($item_details[$date_field]); ?></div>
+    <div class="item-details">
+      <h2><?php echo htmlspecialchars($item_details['item_name']); ?></h2>
+      <div class="detail-row">
+        <span>Category:</span>
+        <span><?php echo htmlspecialchars($item_details['category']); ?></span>
+      </div>
+      <div class="detail-row">
+        <span>Date Lost:</span>
+        <span><?php echo htmlspecialchars($item_details['date_lost']); ?></span>
+      </div>
+      <div class="detail-row">
+        <span>Lost Location:</span>
+        <span><?php echo htmlspecialchars($item_details['lost_location']); ?></span>
       </div>
     </div>
 
-    <div class="description-box">
-      <?php echo nl2br(htmlspecialchars($item_details['description'])); ?>
+    <div class="item-description">
+      <h3>Description</h3>
+      <p><?php echo nl2br(htmlspecialchars($item_details['description'])); ?></p>
     </div>
 
     <div class="status-box">
-      <strong>Status:</strong> <?php echo formatStatus($item_details['status']); ?>
-      <?php if ($is_owner && $item_details['status'] === 'not_found'): // Show status update button only if current user is the owner and status is 'not_found' ?>
-            <button class="status-update-btn" onclick="showConfirmation('found')">Mark as Found</button>
-      <?php endif; ?>
+      <p>Current Status:</p>
+      <span class="status-display status-<?php echo htmlspecialchars($item_details['status']); ?>">
+        <?php echo formatStatus($item_details['status']); ?>
+      </span>
     </div>
 
-    <?php if ($reporter_telegram): ?>
-    <div class="status-box" style="margin-top: 10px;">
-        <strong>Contact:</strong>
-        <a href="https://t.me/<?php echo htmlspecialchars(ltrim($reporter_telegram, '@')); ?>" target="_blank" class="status-update-btn" style="background-color: #0088cc;">
-            <svg style="width:20px;height:20px;vertical-align:middle;margin-right:5px;fill:white;" viewBox="0 0 24 24">
-                <path d="M9.036 17.813c-.267 0-.224-.101-.316-.354l-1.105-3.641 8.506-5.375c.388-.264.747.084.58.526l-2.44 7.768c-.135.408-.355.51-.722.318l-2.006-1.478-0.97.936c-.1.1-.184.184-.378.184zM12 0C5.373 0 0 5.373 0 12c0 6.628 5.373 12 12 12 6.628 0 12-5.372 12-12 0-6.627-5.372-12-12-12z"/>
-            </svg>
-            Chat with Reporter
+    <div class="action-buttons">
+    <?php if ($is_owner): ?>
+        <?php if ($item_details['status'] === 'not_found'): ?>
+            <button class="mark-found-btn" onclick="showConfirmation('found', <?php echo json_encode($item_id); ?>, 'lost')">
+                <i class="fas fa-check-circle"></i> Mark as Found
+            </button>
+        <?php endif; ?>
+    <?php endif; ?>
+
+    <?php if (!empty($reporter_telegram) && !$is_owner): // Only show chat button if not the owner and telegram is available ?>
+        <a href="https://t.me/<?php echo htmlspecialchars(ltrim($reporter_telegram, '@')); ?>" target="_blank" class="chat-btn">
+            <i class="fab fa-telegram-plane"></i> Chat with Reporter
         </a>
-    </div>
     <?php endif; ?>
   </div>
 
@@ -420,7 +540,6 @@ function formatStatus($status) {
   <script>
     let currentStatusAction = '';
     const itemId = <?php echo json_encode($item_id); ?>;
-    const itemType = <?php echo json_encode($item_type); ?>;
 
     function showConfirmation(action) {
       currentStatusAction = action;
@@ -429,7 +548,7 @@ function formatStatus($status) {
       if (action === 'found') {
         message.textContent = "Are you sure you want to mark this lost item as 'Found'? This action cannot be undone.";
       }
-      modal.style.display = 'block';
+      modal.style.display = 'flex'; // Use flex to center content
     }
 
     function hideConfirmation() {
@@ -439,9 +558,19 @@ function formatStatus($status) {
     document.getElementById('confirmAction').addEventListener('click', function() {
       hideConfirmation();
       // Redirect to update status script with item ID, type, and new status
-      window.location.href = `update_item_status.php?id=${itemId}&type=${itemType}&new_status=${currentStatusAction}`;
+      window.location.href = `item_status.php?id=${itemId}&type=lost&new_status=${currentStatusAction}`;
+    });
+
+    // Close the modal if the user clicks outside of it
+    window.addEventListener('click', function(event) {
+        const modal = document.getElementById('confirmationModal');
+        if (event.target === modal) {
+            hideConfirmation();
+        }
     });
   </script>
+
+  <?php include 'message_modal.php'; ?>
 
 </body>
 </html>

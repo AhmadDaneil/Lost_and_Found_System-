@@ -10,7 +10,7 @@ ini_set('display_errors', 1);
 // Check if user is logged in and is an admin
 if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
     $_SESSION['error_message'] = "Unauthorized access. You must be logged in as an administrator.";
-    header("Location: login.html");
+    header("Location: login.php"); // Updated from login.html to login.php
     exit();
 }
 
@@ -284,6 +284,90 @@ closeDbConnection($conn);
                 max-width: 300px;
             }
         }
+
+        /* Message Box / Modal Styles */
+        .message-box {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            justify-content: center;
+            align-items: center;
+            padding-top: 50px; /* To center vertically */
+        }
+
+        .message-box-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 30px;
+            border: 1px solid #888;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            animation-name: animatetop;
+            animation-duration: 0.4s;
+        }
+
+        @keyframes animatetop {
+            from {top: -300px; opacity: 0}
+            to {top: 0; opacity: 1}
+        }
+
+        .message-box-content h3 {
+            margin-top: 0;
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .message-box-content p {
+            margin: 20px 0;
+            font-size: 16px;
+            color: #555;
+            margin-bottom: 25px;
+        }
+
+        .message-box-content .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .message-box-content .confirm-btn,
+        .message-box-content .cancel-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+            border: none;
+        }
+
+        .message-box-content .confirm-btn {
+            background-color: #dc3545; /* Red for delete */
+            color: white;
+        }
+
+        .message-box-content .confirm-btn:hover {
+            background-color: #c82333;
+        }
+
+        .message-box-content .cancel-btn {
+            background-color: #6c757d; /* Gray for cancel */
+            color: white;
+        }
+
+        .message-box-content .cancel-btn:hover {
+            background-color: #5a6268;
+        }
     </style>
 </head>
 <body>
@@ -305,6 +389,18 @@ closeDbConnection($conn);
 
         <main class="admin-main-content">
             <h1>Admin Dashboard - User Management</h1>
+
+            <!-- Display success/error messages from session -->
+            <?php if (isset($_SESSION['success_message'])): ?>
+              <div style="background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; padding: 10px; margin-bottom: 20px; border-radius: 5px; text-align: center;">
+                <?php echo $_SESSION['success_message']; unset($_SESSION['success_message']); ?>
+              </div>
+            <?php endif; ?>
+            <?php if (isset($_SESSION['error_message'])): ?>
+              <div style="background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; padding: 10px; margin-bottom: 20px; border-radius: 5px; text-align: center;">
+                <?php echo $_SESSION['error_message']; unset($_SESSION['error_message']); ?>
+              </div>
+            <?php endif; ?>
 
             <div style="margin-bottom: 25px; text-align: center;">
                 <a href="admin_users.php" class="admin-btn view-report-btn" style="background-color: #007bff; padding: 12px 25px; font-size: 16px;">
@@ -397,8 +493,5 @@ closeDbConnection($conn);
             }
         });
     </script>
-
-    <?php include 'message_modal.php'; ?>
-
 </body>
 </html>

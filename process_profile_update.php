@@ -10,7 +10,7 @@ ini_set('display_errors', 1);
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
     $_SESSION['error_message'] = "You must be logged in to update your profile.";
-    header("Location: login.html");
+    header("Location: login.php"); // Updated from login.html to login.php
     exit();
 }
 
@@ -52,15 +52,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             // Optional: Delete old profile image if it exists
             $stmt_old_image = $conn->prepare("SELECT profile_image_path FROM users WHERE id = ?");
-            $stmt_old_image->bind_param("i", $user_id);
-            $stmt_old_image->execute();
-            $result_old_image = $stmt_old_image->get_result();
-            if ($row = $result_old_image->fetch_assoc()) {
-                if (!empty($row['profile_image_path']) && file_exists($row['profile_image_path'])) {
-                    unlink($row['profile_image_path']); // Delete old file
+            if ($stmt_old_image) {
+                $stmt_old_image->bind_param("i", $user_id);
+                $stmt_old_image->execute();
+                $result_old_image = $stmt_old_image->get_result();
+                if ($row = $result_old_image->fetch_assoc()) {
+                    if (!empty($row['profile_image_path']) && file_exists($row['profile_image_path'])) {
+                        unlink($row['profile_image_path']); // Delete old file
+                    }
                 }
+                $stmt_old_image->close();
+            } else {
+                error_log("Error preparing old image path query: " . $conn->error);
+                // Continue without deleting old image if query fails
             }
-            $stmt_old_image->close();
 
         } else {
             $_SESSION['error_message'] = "Failed to upload profile image.";
@@ -73,15 +78,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         // Delete old profile image if it exists
         $stmt_old_image = $conn->prepare("SELECT profile_image_path FROM users WHERE id = ?");
-        $stmt_old_image->bind_param("i", $user_id);
-        $stmt_old_image->execute();
-        $result_old_image = $stmt_old_image->get_result();
-        if ($row = $result_old_image->fetch_assoc()) {
-            if (!empty($row['profile_image_path']) && file_exists($row['profile_image_path'])) {
-                unlink($row['profile_image_path']); // Delete old file
+        if ($stmt_old_image) {
+            $stmt_old_image->bind_param("i", $user_id);
+            $stmt_old_image->execute();
+            $result_old_image = $stmt_old_image->get_result();
+            if ($row = $result_old_image->fetch_assoc()) {
+                if (!empty($row['profile_image_path']) && file_exists($row['profile_image_path'])) {
+                    unlink($row['profile_image_path']); // Delete old file
+                }
             }
+            $stmt_old_image->close();
+        } else {
+            error_log("Error preparing old image path query for removal: " . $conn->error);
+            // Continue without deleting old image if query fails
         }
-        $stmt_old_image->close();
     }
 
 
@@ -90,7 +100,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $params = [$full_name, $phone_number, $city, $country, $telegram_username, $gender];
     $types = "ssssss";
 
-    if ($profile_image_path !== null) { // Only update image path if a new one was uploaded or removal was requested
+    // Only append profile_image_path to SQL if it was explicitly updated or set to null
+    if (isset($profile_image_path) || (isset($_POST['remove_photo']) && $_POST['remove_photo'] === '1')) {
         $sql .= ", profile_image_path = ?";
         $params[] = $profile_image_path;
         $types .= "s";

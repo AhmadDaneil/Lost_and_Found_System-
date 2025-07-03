@@ -10,7 +10,7 @@ ini_set('display_errors', 1);
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
     $_SESSION['error_message'] = "You must be logged in to update an item.";
-    header("Location: login.html");
+    header("Location: login.php"); // Updated from login.html to login.php
     exit();
 }
 
@@ -23,6 +23,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $category = $_POST['category'] ?? '';
     $location = $_POST['location'] ?? '';
     $date = ''; // Will be either date_lost or date_found
+    $remove_image = isset($_POST['remove_image']) ? 1 : 0; // Check if remove image checkbox is ticked
 
     // Determine the date field based on item type
     if ($item_type === 'lost') {
@@ -34,7 +35,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Basic validation
     if (empty($item_id) || empty($item_name) || empty($description) || empty($category) || empty($location) || empty($date)) {
         $_SESSION['error_message'] = "Please fill in all required fields to update the item.";
-        header("Location: " . $item_type . "_item.php?id=" . htmlspecialchars($item_id));
+        header("Location: report_" . $item_type . "_form.php?id=" . htmlspecialchars($item_id)); // Redirect to correct form
         exit();
     }
 
@@ -45,28 +46,45 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $location_field = ($item_type === 'lost') ? 'lost_location' : 'found_location';
 
     $image_path = null;
-    $current_image_path = null; // To store existing image path if no new file uploaded
+    $current_image_path = null; // To store existing image path from DB
 
-    // First, get the current image path from the database
+    // Get the current image path from the database
     $stmt_get_image = $conn->prepare("SELECT image_path FROM $table WHERE id = ? AND user_id = ?");
-    $stmt_get_image->bind_param("ii", $item_id, $user_id);
-    $stmt_get_image->execute();
-    $result_get_image = $stmt_get_image->get_result();
-    if ($row = $result_get_image->fetch_assoc()) {
-        $current_image_path = $row['image_path'];
+    if ($stmt_get_image) {
+        $stmt_get_image->bind_param("ii", $item_id, $user_id);
+        $stmt_get_image->execute();
+        $result_get_image = $stmt_get_image->get_result();
+        if ($row = $result_get_image->fetch_assoc()) {
+            $current_image_path = $row['image_path'];
+        }
+        $stmt_get_image->close();
+    } else {
+        error_log("Error preparing get image query: " . $conn->error);
+        $_SESSION['error_message'] = "Database error during image path retrieval.";
+        closeDbConnection($conn);
+        header("Location: report_" . $item_type . "_form.php?id=" . htmlspecialchars($item_id));
+        exit();
     }
-    $stmt_get_image->close();
 
 
-    // Handle image upload
-    if (isset($_FILES['item_image']) && $_FILES['item_image']['error'] === UPLOAD_ERR_OK) {
+    // Handle image upload or removal
+    if ($remove_image == 1) {
+        // User requested to remove the image
+        $image_path = null; // Set image path to null in DB
+        // Delete the physical file if it exists
+        if ($current_image_path && file_exists($current_image_path)) {
+            unlink($current_image_path);
+        }
+    } elseif (isset($_FILES['item_image']) && $_FILES['item_image']['error'] === UPLOAD_ERR_OK) {
+        // New image uploaded
         $upload_dir = UPLOAD_DIR; // Defined in config.php
         if (!is_dir($upload_dir)) {
             mkdir($upload_dir, 0777, true); // Create directory if it doesn't exist
         }
 
         $file_tmp_name = $_FILES['item_image']['tmp_name'];
-        $file_name = uniqid() . '_' . basename($_FILES['item_image']['name']);
+        $file_extension = pathinfo($_FILES['item_image']['name'], PATHINFO_EXTENSION);
+        $file_name = uniqid('item_') . '.' . $file_extension;
         $destination = $upload_dir . $file_name;
 
         if (move_uploaded_file($file_tmp_name, $destination)) {
@@ -76,32 +94,39 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 unlink($current_image_path);
             }
         } else {
-            $_SESSION['error_message'] = "Failed to upload image.";
+            $_SESSION['error_message'] = "Failed to upload new image.";
             closeDbConnection($conn);
-            header("Location: " . $item_type . "_item.php?id=" . htmlspecialchars($item_id));
+            header("Location: report_" . $item_type . "_form.php?id=" . htmlspecialchars($item_id));
             exit();
         }
     } else {
-        // No new image uploaded, retain the current one
+        // No new image uploaded and not requested to remove, retain the current one
         $image_path = $current_image_path;
     }
 
     // Prepare the update statement
     $sql = "UPDATE $table SET item_name = ?, description = ?, $date_field = ?, $location_field = ?, category = ?, image_path = ? WHERE id = ? AND user_id = ?";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("ssssssii", $item_name, $description, $date, $location, $category, $image_path, $item_id, $user_id);
+    if ($stmt) {
+        $stmt->bind_param("ssssssii", $item_name, $description, $date, $location, $category, $image_path, $item_id, $user_id);
 
-    if ($stmt->execute()) {
-        $_SESSION['success_message'] = "Item updated successfully!";
-        header("Location: " . $item_type . "_item_view.php?id=" . htmlspecialchars($item_id)); // Redirect to view page
-        exit();
+        if ($stmt->execute()) {
+            $_SESSION['success_message'] = "Item updated successfully!";
+            header("Location: " . $item_type . "_item_view.php?id=" . htmlspecialchars($item_id)); // Redirect to view page
+            exit();
+        } else {
+            $_SESSION['error_message'] = "Error updating item: " . $stmt->error;
+            header("Location: report_" . $item_type . "_form.php?id=" . htmlspecialchars($item_id));
+            exit();
+        }
+        $stmt->close();
     } else {
-        $_SESSION['error_message'] = "Error updating item: " . $stmt->error;
-        header("Location: " . $item_type . "_item.php?id=" . htmlspecialchars($item_id));
+        error_log("Error preparing update query: " . $conn->error);
+        $_SESSION['error_message'] = "Database error during item update.";
+        header("Location: report_" . $item_type . "_form.php?id=" . htmlspecialchars($item_id));
         exit();
     }
 
-    $stmt->close();
     closeDbConnection($conn);
 } else {
     // If accessed directly without POST request

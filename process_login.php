@@ -20,8 +20,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Basic validation
     if (empty($email) || empty($password)) {
         $_SESSION['error_message'] = "Please enter both email and password.";
-        echo "Error: Email or password empty. Redirecting to login.html<br>";
-        header("Location: login.html");
+        echo "Error: Email or password empty. Redirecting to login.php<br>"; // Updated from login.html to login.php
+        header("Location: login.php"); // Updated from login.html to login.php
         exit();
     }
 
@@ -35,7 +35,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         echo "Prepare statement failed: (" . $conn->errno . ") " . $conn->error . "<br>";
         $_SESSION['error_message'] = "Database error during login preparation.";
         closeDbConnection($conn);
-        header("Location: login.html");
+        header("Location: login.php"); // Updated from login.html to login.php
         exit();
     }
 
@@ -77,7 +77,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             echo "Session variables set. Redirecting to dashboard...<br>";
             // Redirect based on user type
             if ($user_type === 'admin') {
-                header("Location: admin_homepage.php"); // Redirect to admin dashboard
+                header("Location: admin_homepage.php"); // Updated from admin_homepage.html to admin_homepage.php
             } else {
                 header("Location: homepage.php"); // Redirect to user homepage (ensure this is .php now)
             }
@@ -85,15 +85,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         } else {
             echo "Password verification: <strong>FAILED!</strong><br>";
             $_SESSION['error_message'] = "Invalid email or password.";
-            echo "Redirecting to login.html with error.<br>";
-            header("Location: login.html");
+            echo "Redirecting to login.php with error.<br>"; // Updated from login.html to login.php
+            header("Location: login.php"); // Updated from login.html to login.php
             exit();
         }
     } else {
         echo "No user found with that email.<br>";
         $_SESSION['error_message'] = "Invalid email or password.";
-        echo "Redirecting to login.html with error.<br>";
-        header("Location: login.html");
+        echo "Redirecting to login.php with error.<br>"; // Updated from login.html to login.php
+        header("Location: login.php"); // Updated from login.html to login.php
         exit();
     }
 
@@ -101,8 +101,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     closeDbConnection($conn);
 } else {
     // If accessed directly without POST request
-    echo "Accessed process_login.php directly without POST. Redirecting to login.html<br>";
-    header("Location: login.html");
+    echo "Accessed process_login.php directly without POST. Redirecting to login.php<br>"; // Updated from login.html to login.php
+    header("Location: login.php"); // Updated from login.html to login.php
     exit();
 }
 ?>

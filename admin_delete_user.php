@@ -10,7 +10,7 @@ ini_set('display_errors', 1);
 // Check if user is logged in and is an admin
 if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
     $_SESSION['error_message'] = "Unauthorized access. You must be logged in as an administrator.";
-    header("Location: login.html");
+    header("Location: login.php"); // Updated from login.html to login.php
     exit();
 }
 

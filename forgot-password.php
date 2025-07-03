@@ -17,7 +17,7 @@
     </form>
 
     <p class="login-link">
-      Remembered it? <a href="login.html">Back to Login</a>
+      Remembered it? <a href="login.php">Back to Login</a>
     </p>
   </div>
 </body>

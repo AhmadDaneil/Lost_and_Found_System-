@@ -9,7 +9,7 @@ ini_set('display_errors', 1);
 
 // Check if user is logged in, if not, redirect to login page
 if (!isset($_SESSION['user_id'])) {
-    header("Location: login.html");
+    header("Location: login.php"); // Changed to login.php
     exit();
 }
 
@@ -39,7 +39,6 @@ if ($stmt_found) {
     $stmt_found->close();
 } else {
     error_log("Error preparing found_items query: " . $conn->error);
-    $_SESSION['error_message'] = "Could not retrieve found items.";
 }
 
 
@@ -65,7 +64,6 @@ if ($stmt_lost) {
     $stmt_lost->close();
 } else {
     error_log("Error preparing lost_items query: " . $conn->error);
-    $_SESSION['error_message'] = "Could not retrieve lost items.";
 }
 
 closeDbConnection($conn);
@@ -77,8 +75,8 @@ closeDbConnection($conn);
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>FoundIt - Home</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
-    /* Your existing CSS from unified_styles.css and homepage.html's style block */
     * {
       box-sizing: border-box;
       font-family: 'Poppins', sans-serif;
@@ -89,6 +87,8 @@ closeDbConnection($conn);
     body {
       background-color: #f5ff9c;
       padding: 20px;
+      display: block; /* Override flex from unified_styles.css body */
+      height: auto;
     }
 
     .navbar {
@@ -113,44 +113,54 @@ closeDbConnection($conn);
 
     .search-box input {
       width: 100%;
-      padding: 14px 20px;
-      border-radius: 20px;
-      border: none;
-      outline: 2px solid purple;
-      font-size: 14px;
+      padding: 12px 20px;
+      border: 2px solid #000;
+      border-radius: 25px;
+      font-size: 1rem;
+      padding-right: 50px; /* Space for icon */
     }
 
-    .search-box input::placeholder {
-      color: #777;
+    .search-box .search-icon {
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #000;
+      font-size: 1.2rem;
     }
 
     .nav-icons {
       display: flex;
-      align-items: center;
-      gap: 20px;
+      gap: 15px;
     }
 
-    .nav-icons .icon {
+    .icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background-color: white;
       display: flex;
       align-items: center;
+      justify-content: center;
+      border: 2px solid #000;
       cursor: pointer;
-      transition: transform 0.3s ease;
+      transition: all 0.3s ease;
+      color: #000;
+      text-decoration: none; /* For a tag */
     }
 
-    .nav-icons .icon svg {
-        width: 24px;
-        height: 24px;
-        fill: #000;
-        transition: fill 0.3s ease, transform 0.3s ease;
-    }
-
-    .nav-icons .icon:hover svg {
-      transform: scale(1.2);
-      fill: #555;
+    .icon:hover {
+      background-color: #000;
+      color: #f5ff9c;
+      transform: scale(1.1);
     }
 
     .section {
-      margin-top: 40px;
+      background-color: #fffdd0;
+      padding: 25px;
+      border-radius: 16px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     }
 
     .section-header {
@@ -158,53 +168,66 @@ closeDbConnection($conn);
       justify-content: space-between;
       align-items: center;
       margin-bottom: 20px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
     }
 
     .section-header h3 {
-      font-size: 18px;
+      font-size: 24px;
       font-weight: 600;
+      color: #333;
     }
 
     .section-header a {
-      font-size: 14px;
       text-decoration: none;
-      color: #000;
+      color: #8b1e1e;
+      font-weight: 600;
+      transition: color 0.3s ease;
+    }
+
+    .section-header a:hover {
+      color: #6a1515;
     }
 
     .items-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
       gap: 20px;
+      justify-content: center;
     }
 
     .item-card {
-      background-color: #fffdd0;
-      padding: 15px;
-      border-radius: 8px;
+      background-color: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
       text-align: center;
-      text-decoration: none;
-      color: inherit;
-      display: block;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      padding: 15px;
       transition: transform 0.2s ease, box-shadow 0.2s ease;
+      text-decoration: none; /* For a tag */
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     .item-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+      transform: translateY(-5px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
     }
 
     .item-img {
-      background-color: #8b1e1e;
-      color: #fff;
+      width: 100%;
       height: 120px;
+      background-color: #e0e0e0;
+      border-radius: 8px;
+      margin-bottom: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 16px;
-      border-radius: 4px;
-      overflow: hidden;
-      margin-bottom: 10px;
+      color: #777;
+      font-size: 14px;
+      overflow: hidden; /* Ensure image doesn't overflow */
     }
 
     .item-img img {
@@ -215,46 +238,112 @@ closeDbConnection($conn);
 
     .item-desc {
       font-size: 14px;
-      color: #333;
-      white-space: pre-line;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      display: -webkit-box;
-      -webkit-line-clamp: 3;
-      -webkit-box-orient: vertical;
+      color: #555;
       text-align: left;
+      width: 100%;
     }
 
+    /* Floating action buttons */
+    .fab-container {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        z-index: 1000;
+    }
+
+    .fab {
+        width: 60px;
+        height: 60px;
+        background-color: #8b1e1e;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+        transition: transform 0.2s ease, background-color 0.2s ease;
+        text-decoration: none; /* For a tag */
+    }
+
+    .fab:hover {
+        transform: scale(1.1);
+        background-color: #6a1515;
+    }
+
+    .fab i {
+        pointer-events: none; /* Prevents icon from interfering with click */
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .navbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+      }
+
+      .search-box {
+        margin: 15px 0;
+        width: 100%;
+      }
+
+      .nav-icons {
+        width: 100%;
+        justify-content: space-around;
+      }
+
+      .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+
+      .items-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      }
+
+      .fab-container {
+        bottom: 20px;
+        right: 20px;
+        gap: 10px;
+      }
+
+      .fab {
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+      }
+    }
   </style>
 </head>
 <body>
 
   <div class="navbar">
     <div class="logo">FoundIt</div>
-
     <div class="search-box">
-      <!-- Form for search functionality -->
       <form action="homepage.php" method="GET">
-        <input type="text" name="search" placeholder="Find your item..." value="<?php echo htmlspecialchars($search_query); ?>" />
+        <input type="text" name="search" placeholder="Search for items..." value="<?php echo htmlspecialchars($search_query); ?>">
+        <i class="fas fa-search search-icon"></i>
       </form>
     </div>
-
     <div class="nav-icons">
-      <a href="report_lost_form.php" class="icon" title="Report Lost Item">
-        <svg fill="#000000" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+      <a href="user_dashboard.php" class="icon" title="Dashboard">
+        <svg fill="#000000" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
       </a>
-      <a href="report_found_form.php" class="icon" title="Report Found Item">
-        <svg fill="#000000" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+      <a href="profile.php" class="icon" title="Profile">
+        <svg fill="#000000" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
       </a>
       <a href="settings.php" class="icon" title="Settings">
         <svg fill="#000000" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.09-.73-1.7-.98l-.35-2.5c-.04-.22-.2-.38-.42-.38H12c-.22 0-.38.16-.42.38l-.35 2.5c-.61.25-1.18.58-1.7.98l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.12.22-.07.49.12.64l2.11 1.65c-.04.32-.07.64-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.09.73 1.7.98l.35 2.5c.04.22.2.38.42.38h3.98c.22 0 .38-.16.42-.38l.35-2.5c.61-.25 1.18-.58 1.7-.98l2.49 1c.22.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
       </a>
-      <a href="user_dashboard.php" class="icon" title="Dashboard">
-    <svg fill="#000000" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
-    </a>
-    <a href="profile.php" class="icon" title="Profile">
-        <svg fill="#000000" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-    </a>
+      <a href="logout.php" class="icon" title="Logout">
+        <svg fill="#000000" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+      </a>
     </div>
   </div>
 
@@ -316,7 +405,16 @@ closeDbConnection($conn);
     </div>
   </div>
 
-  <!-- Include the message modal at the end of the body -->
+  <!-- Floating action buttons -->
+  <div class="fab-container">
+    <a href="report_lost_form.php" class="fab" title="Report Lost Item">
+      <i class="fas fa-question"></i>
+    </a>
+    <a href="report_found_form.php" class="fab" title="Report Found Item">
+      <i class="fas fa-plus"></i>
+    </a>
+  </div>
+
   <?php include 'message_modal.php'; ?>
 
 </body>

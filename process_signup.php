@@ -33,56 +33,80 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // Check if email already exists
     $stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
-    $stmt->bind_param("s", $email);
-    $stmt->execute();
-    $stmt->store_result();
-
-    if ($stmt->num_rows > 0) {
-        $_SESSION['error_message'] = "Email already registered. Please use a different email or log in.";
-        $stmt->close();
-        closeDbConnection($conn);
-        header("Location: signup.php");
-        exit();
-    }
-    $stmt->close();
-
-    // Check if Telegram username already exists (if provided)
-    if (!empty($telegram_username)) {
-        $stmt = $conn->prepare("SELECT id FROM users WHERE telegram_username = ?");
-        $stmt->bind_param("s", $telegram_username);
+    if ($stmt) {
+        $stmt->bind_param("s", $email);
         $stmt->execute();
         $stmt->store_result();
 
         if ($stmt->num_rows > 0) {
-            $_SESSION['error_message'] = "Telegram username already taken. Please choose another.";
+            $_SESSION['error_message'] = "Email already registered. Please use a different email or log in.";
             $stmt->close();
             closeDbConnection($conn);
-            header("Location: login.php");
+            header("Location: signup.php");
             exit();
         }
         $stmt->close();
+    } else {
+        error_log("Error preparing email check query: " . $conn->error);
+        $_SESSION['error_message'] = "Database error during email check.";
+        closeDbConnection($conn);
+        header("Location: signup.php");
+        exit();
+    }
+
+
+    // Check if Telegram username already exists (if provided)
+    if (!empty($telegram_username)) {
+        $stmt = $conn->prepare("SELECT id FROM users WHERE telegram_username = ?");
+        if ($stmt) {
+            $stmt->bind_param("s", $telegram_username);
+            $stmt->execute();
+            $stmt->store_result();
+
+            if ($stmt->num_rows > 0) {
+                $_SESSION['error_message'] = "Telegram username already taken. Please choose another.";
+                $stmt->close();
+                closeDbConnection($conn);
+                header("Location: signup.php"); // Redirect to signup.php, not login.php
+                exit();
+            }
+            $stmt->close();
+        } else {
+            error_log("Error preparing telegram username check query: " . $conn->error);
+            $_SESSION['error_message'] = "Database error during Telegram username check.";
+            closeDbConnection($conn);
+            header("Location: signup.php");
+            exit();
+        }
     }
 
     // Insert new user into the database
     $stmt = $conn->prepare("INSERT INTO users (full_name, phone_number, email, city, country, password_hash, telegram_username, gender) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
     // 'ssisssss' - s for string, i for integer (if phone_number were integer, but it's varchar)
-    $stmt->bind_param("ssssssss", $full_name, $phone_number, $email, $city, $country, $password_hash, $telegram_username, $gender);
+    if ($stmt) {
+        $stmt->bind_param("ssssssss", $full_name, $phone_number, $email, $city, $country, $password_hash, $telegram_username, $gender);
 
-    if ($stmt->execute()) {
-        $_SESSION['success_message'] = "Registration successful! You can now log in.";
-        header("Location: login.php"); // Redirect to login page after successful registration
-        exit();
+        if ($stmt->execute()) {
+            $_SESSION['success_message'] = "Registration successful! You can now log in.";
+            header("Location: login.php"); // Redirect to login page after successful registration
+            exit();
+        } else {
+            $_SESSION['error_message'] = "Error during registration: " . $stmt->error;
+            header("Location: signup.php"); // Redirect back to signup on error
+            exit();
+        }
+        $stmt->close();
     } else {
-        $_SESSION['error_message'] = "Error during registration: " . $stmt->error;
-        header("Location: login.php");
+        error_log("Error preparing user insertion query: " . $conn->error);
+        $_SESSION['error_message'] = "Database error during registration.";
+        closeDbConnection($conn);
+        header("Location: signup.php");
         exit();
     }
 
-    $stmt->close();
-    closeDbConnection($conn);
 } else {
     // If accessed directly without POST request
-    header("Location: login.php");
+    header("Location: signup.php"); // Redirect to signup.php
     exit();
 }
 ?>

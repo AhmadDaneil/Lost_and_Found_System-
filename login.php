@@ -139,7 +139,7 @@ if (isset($_COOKIE['remember_user_id']) && !isset($_SESSION['user_id'])) {
     }
 
     .forgot {
-      color: #1a53ff; /* Dark red link */
+      color: #8b1e1e; /* Changed from #1a53ff to #8b1e1e for consistency */
       text-decoration: none;
       font-weight: 500;
       transition: color 0.3s ease;
@@ -150,8 +150,8 @@ if (isset($_COOKIE['remember_user_id']) && !isset($_SESSION['user_id'])) {
     }
 
     .login-btn {
-      background-color: #00cc00;
-      color: black;
+      background-color: #8b1e1e; /* Changed from #00cc00 to #8b1e1e for consistency */
+      color: white; /* Changed from black to white for consistency */
       padding: 12px 10px;
       border: none;
       border-radius: 8px;
@@ -170,7 +170,7 @@ if (isset($_COOKIE['remember_user_id']) && !isset($_SESSION['user_id'])) {
     }
 
     .login-btn:hover {
-      background-color: #004d00;
+      background-color: #6a1515; /* Changed from #004d00 to #6a1515 for consistency */
     }
 
     .separator {
@@ -259,7 +259,7 @@ if (isset($_COOKIE['remember_user_id']) && !isset($_SESSION['user_id'])) {
         <label>
             <input type="checkbox" name="remember_me"> Remember me?
         </label>
-        <a href="forgot-password.html" class="forgot">Forgot your password?</a>
+        <a href="forgot-password.php" class="forgot">Forgot your password?</a> <!-- Updated from forgot-password.html to forgot-password.php -->
     </div>
 
       <button type="submit" class="login-btn"><i class="fas fa-sign-in-alt"></i> LOG IN</button>
@@ -274,7 +274,7 @@ if (isset($_COOKIE['remember_user_id']) && !isset($_SESSION['user_id'])) {
     </div>
 
     <div class="signup-link">
-      Don't have an account? <a href="signup.html">Sign Up</a>
+      Don't have an account? <a href="signup.php">Sign Up</a> <!-- Updated from signup.html to signup.php -->
     </div>
   </div>
 

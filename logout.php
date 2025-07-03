@@ -13,6 +13,6 @@ if (isset($_COOKIE['remember_user_id'])) {
 }
 
 // Redirect to the login page or homepage
-header("Location: login.html"); // Or index.html
+header("Location: login.php"); // Updated from login.html to login.php
 exit();
 ?>

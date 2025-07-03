@@ -10,7 +10,7 @@ ini_set('display_errors', 1);
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
     $_SESSION['error_message'] = "You must be logged in to report or edit an item.";
-    header("Location: login.html");
+    header("Location: login.php"); // Updated from login.html to login.php
     exit();
 }
 
@@ -51,6 +51,13 @@ if ($item_id) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <style>
     /* Add styles specific to this form if not already in unified_styles.css */
+    body {
+      background-color: #f5ff9c;
+      padding: 20px;
+      display: block; /* Override flex from unified_styles.css body */
+      height: auto;
+    }
+
     .form-container {
       background-color: #fffdd0;
       padding: 30px;
@@ -301,6 +308,8 @@ if ($item_id) {
         }
     };
   </script>
+
+  <?php include 'message_modal.php'; ?>
 
 </body>
 </html>

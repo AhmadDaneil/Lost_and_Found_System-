@@ -10,22 +10,23 @@ ini_set('display_errors', 1);
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
     $_SESSION['error_message'] = "You must be logged in to report or edit an item.";
-    header("Location: login.html");
+    header("Location: login.php"); // Updated from login.html to login.php
     exit();
 }
 
 $item_id = $_GET['id'] ?? null;
 $item_details = null;
-$page_title = "Report Lost Item";
+$page_title = "Report Found Item"; // Corrected title for found items
 $form_action = "add_item.php"; // Default for new item
 
 if ($item_id) {
     // If an item ID is provided, we are in edit mode
-    $page_title = "Edit Lost Item";
-    $form_action = "update_item.php"; // New script to handle updates
+    $page_title = "Edit Found Item"; // Corrected title for found items
+    $form_action = "update_item.php"; // Script to handle updates
 
     $conn = getDbConnection();
-    $stmt = $conn->prepare("SELECT item_name, description, date_lost, lost_location, category, image_path, status FROM lost_items WHERE id = ? AND user_id = ?");
+    // Fetch found item details for editing
+    $stmt = $conn->prepare("SELECT item_name, description, date_found, found_location, category, image_path, status FROM found_items WHERE id = ? AND user_id = ?");
     $stmt->bind_param("ii", $item_id, $_SESSION['user_id']);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -33,7 +34,7 @@ if ($item_id) {
     if ($result->num_rows === 1) {
         $item_details = $result->fetch_assoc();
     } else {
-        $_SESSION['error_message'] = "Lost item not found or you don't have permission to edit.";
+        $_SESSION['error_message'] = "Found item not found or you don't have permission to edit.";
         header("Location: homepage.php");
         exit();
     }
@@ -51,6 +52,13 @@ if ($item_id) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <style>
     /* Add styles specific to this form if not already in unified_styles.css */
+    body {
+      background-color: #f5ff9c;
+      padding: 20px;
+      display: block; /* Override flex from unified_styles.css body */
+      height: auto;
+    }
+
     .form-container {
       background-color: #fffdd0;
       padding: 30px;
@@ -235,7 +243,7 @@ if ($item_id) {
     <!-- Form action dynamically set based on whether it's a new report or an edit -->
     <form action="<?php echo htmlspecialchars($form_action); ?>" method="POST" enctype="multipart/form-data">
       <!-- Hidden input to distinguish between lost and found items -->
-      <input type="hidden" name="item_type" value="lost">
+      <input type="hidden" name="item_type" value="found"> <!-- Corrected to 'found' -->
       <?php if ($item_id): // Pass item_id if in edit mode ?>
         <input type="hidden" name="item_id" value="<?php echo htmlspecialchars($item_id); ?>">
       <?php endif; ?>
@@ -245,15 +253,15 @@ if ($item_id) {
 
       <div class="form-row">
         <div class="date-section">
-          <label for="date_lost">Date Lost</label>
-          <input type="date" id="date_lost" name="date_lost" value="<?php echo htmlspecialchars($item_details['date_lost'] ?? ''); ?>" required>
+          <label for="date_found">Date Found</label> <!-- Corrected label to 'Date Found' -->
+          <input type="date" id="date_found" name="date_found" value="<?php echo htmlspecialchars($item_details['date_found'] ?? ''); ?>" required> <!-- Corrected name to 'date_found' -->
         </div>
 
         <div class="upload-section" onclick="document.getElementById('item_image').click()">
           <label>Upload Image</label>
           <div class="upload-icon"><i class="fas fa-upload"></i></div>
           <input type="file" id="item_image" name="item_image" accept="image/*">
-          <img id="image_preview_lost" src="<?php echo ($item_details['image_path'] ?? '') ? htmlspecialchars(BASE_URL . $item_details['image_path']) : ''; ?>" alt="Image Preview" style="max-width: 100%; max-height: 100px; margin-top: 10px; <?php echo ($item_details['image_path'] ?? '') ? 'display: block;' : 'display: none;'; ?>">
+          <img id="image_preview_found" src="<?php echo ($item_details['image_path'] ?? '') ? htmlspecialchars(BASE_URL . $item_details['image_path']) : ''; ?>" alt="Image Preview" style="max-width: 100%; max-height: 100px; margin-top: 10px; <?php echo ($item_details['image_path'] ?? '') ? 'display: block;' : 'display: none;'; ?>"> <!-- Corrected ID to 'image_preview_found' -->
         </div>
 
         <div class="category-section">
@@ -274,7 +282,7 @@ if ($item_id) {
         </div>
       </div>
 
-      <input type="text" name="location" placeholder="Location Lost" value="<?php echo htmlspecialchars($item_details['lost_location'] ?? ''); ?>" required>
+      <input type="text" name="location" placeholder="Location Found" value="<?php echo htmlspecialchars($item_details['found_location'] ?? ''); ?>" required> <!-- Corrected placeholder and name to 'found_location' -->
       <button type="submit">SUBMIT</button>
     </form>
   </div>
@@ -284,23 +292,25 @@ if ($item_id) {
     document.getElementById('item_image').addEventListener('change', function(event) {
       const [file] = event.target.files;
       if (file) {
-        const preview = document.getElementById('image_preview_lost');
+        const preview = document.getElementById('image_preview_found'); // Corrected ID
         preview.src = URL.createObjectURL(file);
         preview.style.display = 'block';
       } else {
-        document.getElementById('image_preview_lost').style.display = 'none';
-        document.getElementById('image_preview_lost').src = '';
+        document.getElementById('image_preview_found').style.display = 'none'; // Corrected ID
+        document.getElementById('image_preview_found').src = '';
       }
     });
 
     // Display existing image if available on load
     window.onload = function() {
-        const existingImagePath = document.getElementById('image_preview_lost').src;
+        const existingImagePath = document.getElementById('image_preview_found').src; // Corrected ID
         if (existingImagePath && existingImagePath !== window.location.href) { // Check if src is not empty and not just the current page URL
-            document.getElementById('image_preview_lost').style.display = 'block';
+            document.getElementById('image_preview_found').style.display = 'block'; // Corrected ID
         }
     };
   </script>
+
+  <?php include 'message_modal.php'; ?>
 
 </body>
 </html>

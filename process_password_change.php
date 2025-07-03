@@ -10,7 +10,7 @@ ini_set('display_errors', 1);
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
     $_SESSION['error_message'] = "You must be logged in to change your password.";
-    header("Location: login.html");
+    header("Location: login.php"); // Updated from login.html to login.php
     exit();
 }
 
@@ -39,7 +39,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 exit();
             }
         } else {
-            // This case should ideally not happen if user_id is from session, but good for robustness
             $_SESSION['error_message'] = "User not found.";
             header("Location: profile.php");
             exit();
@@ -48,6 +47,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } else {
         error_log("Error preparing current password verification query: " . $conn->error);
         $_SESSION['error_message'] = "Database error during password verification.";
+        closeDbConnection($conn);
         header("Location: profile.php");
         exit();
     }

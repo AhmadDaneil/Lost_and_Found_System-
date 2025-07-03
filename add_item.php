@@ -10,7 +10,7 @@ ini_set('display_errors', 1);
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
     $_SESSION['error_message'] = "You must be logged in to report an item.";
-    header("Location: login.html");
+    header("Location: login.php"); // Updated from login.html to login.php
     exit();
 }
 
@@ -34,9 +34,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (empty($item_name) || empty($description) || empty($category) || empty($location) || empty($date)) {
         $_SESSION['error_message'] = "Please fill in all required fields.";
         if ($item_type === 'lost') {
-            header("Location: report_lost_form.php");
+            header("Location: report_lost_form.php"); // Updated from report_lost_form.html to report_lost_form.php
         } else {
-            header("Location: report_found_form.php");
+            header("Location: report_found_form.php"); // Updated from report_found_form.html to report_found_form.php
         }
         exit();
     }
@@ -44,7 +44,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $image_path = null;
     // Handle image upload
     if (isset($_FILES['item_image']) && $_FILES['item_image']['error'] == UPLOAD_ERR_OK) {
-        $target_dir = UPLOAD_DIR; // Defined in config.php
+        // Corrected: UPLOAD_DIR is already defined in config.php
+        $target_dir = UPLOAD_DIR;
+        
         // Create uploads directory if it doesn't exist
         if (!is_dir($target_dir)) {
             mkdir($target_dir, 0777, true); // Create recursively and set permissions
@@ -60,9 +62,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         } else {
             $_SESSION['error_message'] = "Error uploading image.";
             if ($item_type === 'lost') {
-                header("Location: report_lost_form.php");
+                header("Location: report_lost_form.php"); // Updated from report_lost_form.html to report_lost_form.php
             } else {
-                header("Location: report_found_form.php");
+                header("Location: report_found_form.php"); // Updated from report_found_form.html to report_found_form.php
             }
             exit();
         }
@@ -78,21 +80,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt->bind_param("issssss", $user_id, $item_name, $description, $date, $location, $category, $image_path);
     } else {
         $_SESSION['error_message'] = "Invalid item type.";
-        header("Location: homepage.php"); // Redirect to homepage if type is invalid
+        header("Location: homepage.php"); // Updated from homepage.html to homepage.php
         exit();
     }
 
     if ($stmt->execute()) {
         $_SESSION['success_message'] = "Item reported successfully!";
-        header("Location: homepage.php"); // Redirect to homepage after successful report
+        header("Location: homepage.php"); // Updated from homepage.html to homepage.php
         exit();
     } else {
         $_SESSION['error_message'] = "Error reporting item: " . $stmt->error;
         // Redirect back to the form if there was a DB error
         if ($item_type === 'lost') {
-            header("Location: report_lost_form.php");
+            header("Location: report_lost_form.php"); // Updated from report_lost_form.html to report_lost_form.php
         } else {
-            header("Location: report_found_form.php");
+            header("Location: report_found_form.php"); // Updated from report_found_form.html to report_found_form.php
         }
         exit();
     }
@@ -101,7 +103,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     closeDbConnection($conn);
 } else {
     // If accessed directly without POST request
-    header("Location: homepage.php");
+    header("Location: homepage.php"); // Updated from homepage.html to homepage.php
     exit();
 }
 ?>
