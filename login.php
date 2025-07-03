@@ -101,7 +101,7 @@ if (isset($_COOKIE['remember_user_id']) && !isset($_SESSION['user_id'])) {
     form {
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 5px;
     }
 
     input[type="email"],
@@ -152,7 +152,7 @@ if (isset($_COOKIE['remember_user_id']) && !isset($_SESSION['user_id'])) {
     .login-btn {
       background-color: #00cc00;
       color: black;
-      padding: 12px 20px;
+      padding: 12px 10px;
       border: none;
       border-radius: 8px;
       font-size: 1.1rem;
@@ -162,7 +162,7 @@ if (isset($_COOKIE['remember_user_id']) && !isset($_SESSION['user_id'])) {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
+      gap: 5px;
     }
 
     .login-btn i {
@@ -219,10 +219,6 @@ if (isset($_COOKIE['remember_user_id']) && !isset($_SESSION['user_id'])) {
       transition: text-decoration 0.3s ease;
     }
 
-    .signup-link a:hover {
-      text-decoration: underline;
-    }
-
     /* Responsive adjustments */
     @media (max-width: 480px) {
       .login-container {
@@ -236,7 +232,7 @@ if (isset($_COOKIE['remember_user_id']) && !isset($_SESSION['user_id'])) {
 
       .login-btn {
         font-size: 1rem;
-        padding: 10px 15px;
+        padding: 5px 15px;
       }
 
       .social-icons {
