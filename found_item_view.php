@@ -514,7 +514,7 @@ function formatStatus($status) {
     <div class="action-buttons">
     <?php if ($is_owner): ?>
         <?php if ($item_details['status'] === 'unclaimed'): ?>
-            <button class="mark-claimed-btn" onclick="showConfirmation('claimed', <?php echo json_encode($item_id); ?>, 'found')">
+            <button class="mark-claimed-btn" onclick="showConfirmation('claimed')">
                 <i class="fas fa-check-circle"></i> Mark as Claimed by Owner
             </button>
         <?php endif; ?>
@@ -528,7 +528,7 @@ function formatStatus($status) {
   </div>
 
   <!-- Confirmation Modal -->
-  <div id="confirmationModal" class="message-box">
+  <div id="confirmationModal" class="message-box" style="display: none;">
     <h3>Are you sure?</h3>
     <p id="confirmationMessage"></p>
     <div class="button-group">
@@ -548,7 +548,7 @@ function formatStatus($status) {
       if (action === 'claimed') {
         message.textContent = "Are you sure you want to mark this found item as 'Claimed by owner'? This action cannot be undone.";
       }
-      modal.style.display = 'flex'; // Use flex to center content
+      modal.style.display = 'flex'; // Show the modal
     }
 
     function hideConfirmation() {
@@ -573,4 +573,5 @@ function formatStatus($status) {
   <?php include 'message_modal.php'; ?>
 
 </body>
-</html>
+</html> 
+    

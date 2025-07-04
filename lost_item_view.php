@@ -514,7 +514,7 @@ function formatStatus($status) {
     <div class="action-buttons">
     <?php if ($is_owner): ?>
         <?php if ($item_details['status'] === 'not_found'): ?>
-            <button class="mark-found-btn" onclick="showConfirmation('found', <?php echo json_encode($item_id); ?>, 'lost')">
+            <button class="mark-found-btn" onclick="showConfirmation('found')">
                 <i class="fas fa-check-circle"></i> Mark as Found
             </button>
         <?php endif; ?>
@@ -528,7 +528,7 @@ function formatStatus($status) {
   </div>
 
   <!-- Confirmation Modal -->
-  <div id="confirmationModal" class="message-box">
+  <div id="confirmationModal" class="message-box" style="display: none;">
     <h3>Are you sure?</h3>
     <p id="confirmationMessage"></p>
     <div class="button-group">
@@ -545,10 +545,12 @@ function formatStatus($status) {
       currentStatusAction = action;
       const modal = document.getElementById('confirmationModal');
       const message = document.getElementById('confirmationMessage');
+      
       if (action === 'found') {
         message.textContent = "Are you sure you want to mark this lost item as 'Found'? This action cannot be undone.";
       }
-      modal.style.display = 'flex'; // Use flex to center content
+      
+      modal.style.display = 'flex'; // Show the modal
     }
 
     function hideConfirmation() {
