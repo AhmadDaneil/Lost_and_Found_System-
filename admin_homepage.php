@@ -3,51 +3,108 @@ session_start();
 require_once 'db_connect.php';
 require_once 'config.php';
 
-// Enable error reporting for debugging
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// Check if user is logged in and is an admin
+// Check admin authentication
 if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
     $_SESSION['error_message'] = "You must be logged in as an administrator to access this page.";
-    header("Location: login.php"); // Updated from login.html to login.php
+    header("Location: login.php");
     exit();
 }
 
 $admin_full_name = $_SESSION['full_name'] ?? 'Admin';
 
+// Handle Excel exports
+function exportToExcel($data, $filename, $headers) {
+    header('Content-Type: application/vnd.ms-excel');
+    header('Content-Disposition: attachment; filename="'.$filename.'_'.date('Y-m-d').'.xls"');
+    
+    echo implode("\t", $headers) . "\n";
+    
+    foreach ($data as $row) {
+        $rowData = [];
+        foreach (array_keys($headers) as $key) {
+            $rowData[] = $row[$key] ?? '';
+        }
+        echo implode("\t", $rowData) . "\n";
+    }
+    
+    exit();
+}
+
+// Handle Excel export for items
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export_excel'])) {
+    $conn = getDbConnection();
+    
+    $sql = "(SELECT id, item_name, description, status, created_at, user_id, lost_location AS location, category, 'Lost' AS item_type FROM lost_items)
+            UNION ALL
+            (SELECT id, item_name, description, status, created_at, user_id, found_location AS location, category, 'Found' AS item_type FROM found_items)
+            ORDER BY created_at DESC";
+    
+    $result = $conn->query($sql);
+    $items = $result->fetch_all(MYSQLI_ASSOC);
+    
+    $headers = [
+        'id' => 'ID',
+        'item_name' => 'Item Name',
+        'item_type' => 'Type',
+        'description' => 'Description',
+        'status' => 'Status',
+        'location' => 'Location',
+        'category' => 'Category',
+        'created_at' => 'Reported Date'
+    ];
+    
+    exportToExcel($items, 'lost_and_found_report', $headers);
+}
+
+// Handle Excel export for users
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export_users_excel'])) {
+    $conn = getDbConnection();
+    $result = $conn->query("SELECT id, full_name, email, phone_number, created_at FROM users ORDER BY created_at DESC");
+    $users = $result->fetch_all(MYSQLI_ASSOC);
+    
+    $headers = [
+        'id' => 'ID',
+        'full_name' => 'Full Name',
+        'email' => 'Email',
+        'phone_number' => 'Phone',
+        'created_at' => 'Registration Date'
+    ];
+    
+    exportToExcel($users, 'users_report', $headers);
+}
+
+// Fetch data for display
 $conn = getDbConnection();
 
-$search_query = $_GET['search'] ?? ''; // Get search query from URL parameter
+// Get search query (for items)
+$search_query = $_GET['search'] ?? '';
 
-// Fetch all reported items (both lost and found)
+// Get all users
+$users = [];
+$users_result = $conn->query("SELECT id, full_name, email, phone_number, created_at FROM users ORDER BY created_at DESC");
+if ($users_result) {
+    $users = $users_result->fetch_all(MYSQLI_ASSOC);
+}
+
+// Get all reported items
 $all_reported_items = [];
-
-// Base SQL for lost items
 $sql_lost = "SELECT id, item_name, description, status, created_at, user_id, lost_location AS location, category FROM lost_items";
-// Base SQL for found items
 $sql_found = "SELECT id, item_name, description, status, created_at, user_id, found_location AS location, category FROM found_items";
-
-$search_params = [];
-$search_types = "";
 
 if (!empty($search_query)) {
     $search_param = '%' . $search_query . '%';
-    // Add WHERE clause for lost items
     $sql_lost .= " WHERE item_name LIKE ? OR description LIKE ? OR lost_location LIKE ? OR category LIKE ?";
-    // Add WHERE clause for found items
     $sql_found .= " WHERE item_name LIKE ? OR description LIKE ? OR found_location LIKE ? OR category LIKE ?";
-
-    // Prepare search parameters for both queries
-    $search_params = [$search_param, $search_param, $search_param, $search_param];
-    $search_types = "ssss";
 }
 
 // Fetch lost items
 $stmt_lost = $conn->prepare($sql_lost . " ORDER BY created_at DESC");
 if ($stmt_lost) {
     if (!empty($search_query)) {
-        $stmt_lost->bind_param($search_types, ...$search_params);
+        $stmt_lost->bind_param('ssss', $search_param, $search_param, $search_param, $search_param);
     }
     $stmt_lost->execute();
     $result_lost = $stmt_lost->get_result();
@@ -56,15 +113,13 @@ if ($stmt_lost) {
         $all_reported_items[] = $row;
     }
     $stmt_lost->close();
-} else {
-    error_log("Error preparing lost_items query: " . $conn->error);
 }
 
 // Fetch found items
 $stmt_found = $conn->prepare($sql_found . " ORDER BY created_at DESC");
 if ($stmt_found) {
     if (!empty($search_query)) {
-        $stmt_found->bind_param($search_types, ...$search_params);
+        $stmt_found->bind_param('ssss', $search_param, $search_param, $search_param, $search_param);
     }
     $stmt_found->execute();
     $result_found = $stmt_found->get_result();
@@ -73,57 +128,54 @@ if ($stmt_found) {
         $all_reported_items[] = $row;
     }
     $stmt_found->close();
-} else {
-    error_log("Error preparing found_items query: " . $conn->error);
 }
 
-// Fetch usernames for all items
+// Get user names for displayed items
 $user_names = [];
 if (!empty($all_reported_items)) {
     $user_ids = array_unique(array_column($all_reported_items, 'user_id'));
-    $id_placeholders = implode(',', array_fill(0, count($user_ids), '?'));
-    $stmt_users = $conn->prepare("SELECT id, full_name FROM users WHERE id IN ($id_placeholders)");
-    if ($stmt_users) {
-        $types = str_repeat('i', count($user_ids));
-        $stmt_users->bind_param($types, ...$user_ids);
-        $stmt_users->execute();
-        $result_users = $stmt_users->get_result();
-        while ($row = $result_users->fetch_assoc()) {
-            $user_names[$row['id']] = $row['full_name'];
+    if (!empty($user_ids)) {
+        $id_placeholders = implode(',', array_fill(0, count($user_ids), '?'));
+        $stmt_users = $conn->prepare("SELECT id, full_name FROM users WHERE id IN ($id_placeholders)");
+        if ($stmt_users) {
+            $types = str_repeat('i', count($user_ids));
+            $stmt_users->bind_param($types, ...$user_ids);
+            $stmt_users->execute();
+            $result_users = $stmt_users->get_result();
+            while ($row = $result_users->fetch_assoc()) {
+                $user_names[$row['id']] = $row['full_name'];
+            }
+            $stmt_users->close();
         }
-        $stmt_users->close();
-    } else {
-        error_log("Error preparing users query: " . $conn->error);
     }
 }
 
-// Sort items by created_at (most recent first)
-usort($all_reported_items, function($a, $b) {
-    return strtotime($b['created_at']) - strtotime($a['created_at']);
-});
-
 closeDbConnection($conn);
 
-// Function to format status for display
 function formatStatus($status, $item_type) {
-    if ($item_type === 'Lost') {
-        switch ($status) {
-            case 'not_found': return '❌ Not Found';
-            case 'found': return '✅ Found';
-            case 'pending_approval': return '⏳ Pending Approval';
-            case 'rejected': return '🚫 Rejected';
-            default: return ucfirst(str_replace('_', ' ', $status));
-        }
-    } elseif ($item_type === 'Found') {
-        switch ($status) {
-            case 'unclaimed': return '❌ Unclaimed';
-            case 'claimed': return '✅ Claimed by owner';
-            case 'pending_approval': return '⏳ Pending Approval';
-            case 'rejected': return '🚫 Rejected';
-            default: return ucfirst(str_replace('_', ' ', $status));
-        }
-    }
-    return ucfirst(str_replace('_', ' ', $status));
+    $statusClasses = [
+        'Lost' => [
+            'not_found' => ['class' => 'status-not-found', 'text' => 'Not Found'],
+            'found' => ['class' => 'status-found', 'text' => 'Found'],
+            'pending_approval' => ['class' => 'status-pending', 'text' => 'Pending Approval'],
+            'rejected' => ['class' => 'status-rejected', 'text' => 'Rejected']
+        ],
+        'Found' => [
+            'unclaimed' => ['class' => 'status-not-found', 'text' => 'Unclaimed'],
+            'claimed' => ['class' => 'status-found', 'text' => 'Claimed'],
+            'pending_approval' => ['class' => 'status-pending', 'text' => 'Pending Approval'],
+            'rejected' => ['class' => 'status-rejected', 'text' => 'Rejected']
+        ]
+    ];
+
+    $statusInfo = $statusClasses[$item_type][$status] ?? 
+                 ['class' => '', 'text' => ucfirst(str_replace('_', ' ', $status))];
+
+    return sprintf(
+        '<span class="status-badge %s">%s</span>',
+        $statusInfo['class'],
+        $statusInfo['text']
+    );
 }
 ?>
 <!DOCTYPE html>
@@ -131,447 +183,672 @@ function formatStatus($status, $item_type) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - FoundIt</title>
-    <link rel="stylesheet" href="unified_styles.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <title>Admin Dashboard | FoundIt</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Admin Dashboard Specific Styles (can be moved to unified_styles.css if preferred) */
-        .admin-dashboard-container {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            background-color: #f0f2f5;
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --danger: #f72585;
+            --success: #4cc9f0;
+            --warning: #ff9f1c;
+            --dark: #212529;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+            --gray-light: #e9ecef;
+            --border-radius: 0.5rem;
+            --box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --transition: all 0.15s ease-in-out;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
             font-family: 'Poppins', sans-serif;
+            background-color: #f5f7fa;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.5rem;
         }
 
         .admin-header {
-            background-color: #8b1e1e;
-            color: white;
-            padding: 20px 30px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
         }
 
-        .header-left {
+        .admin-header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .admin-header .admin-info {
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 1.5rem;
         }
 
-        .admin-logo {
-            font-size: 28px;
-            font-weight: 700;
-        }
-
-        .header-right {
+        .admin-name {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 0.5rem;
+            font-weight: 500;
         }
 
-        .admin-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: 2px solid white;
-            object-fit: cover;
-        }
-
-        .logout-btn {
-            background-color: #d9534f;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            font-weight: 500;
             cursor: pointer;
-            font-size: 14px;
+            transition: var(--transition);
+            border: 1px solid transparent;
+        }
+
+        .btn i {
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #e5177a;
+        }
+
+        .btn-success {
+            background-color: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #3ab8dd;
+        }
+
+        .tab-container {
+            margin-bottom: 1.5rem;
+        }
+
+        .tab-buttons {
             display: flex;
-            align-items: center;
-            gap: 5px;
-            transition: background-color 0.3s ease;
+            border-bottom: 1px solid var(--gray-light);
         }
 
-        .logout-btn:hover {
-            background-color: #c9302c;
+        .tab-btn {
+            padding: 0.75rem 1.5rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--gray);
+            position: relative;
+            transition: var(--transition);
         }
 
-        .admin-main-content {
-            flex-grow: 1;
-            padding: 30px;
-            background-color: #f8f9fa;
+        .tab-btn.active {
+            color: var(--primary);
         }
 
-        .controls-row {
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: var(--primary);
+        }
+
+        .tab-btn i {
+            margin-right: 0.5rem;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .search-export-container {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
-            gap: 15px;
+            margin-bottom: 1.5rem;
+            gap: 1rem;
         }
 
         .search-box {
-            display: flex;
-            border: 1px solid #ced4da;
-            border-radius: 20px;
-            overflow: hidden;
             flex-grow: 1;
-            max-width: 400px;
-        }
-
-        .search-input {
-            border: none;
-            padding: 10px 15px;
-            flex-grow: 1;
-            font-size: 14px;
-            outline: none;
-        }
-
-        .search-icon {
-            background-color: #e9ecef;
-            border: none;
-            padding: 10px 15px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        .search-icon:hover {
-            background-color: #dee2e6;
-        }
-
-        .sort-dropdown {
             position: relative;
-            display: inline-block;
-            border: 1px solid #ced4da;
-            border-radius: 20px;
-            background-color: white;
-            overflow: hidden;
         }
 
-        .sort-dropdown select {
-            appearance: none;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            background-color: transparent;
-            border: none;
-            padding: 10px 30px 10px 15px;
-            font-size: 14px;
-            cursor: pointer;
-            outline: none;
+        .search-box input {
             width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--gray-light);
+            font-size: 0.9rem;
+            transition: var(--transition);
         }
 
-        .sort-dropdown i {
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+        }
+
+        .search-box i {
             position: absolute;
-            right: 10px;
+            left: 1rem;
             top: 50%;
             transform: translateY(-50%);
-            pointer-events: none;
+            color: var(--gray);
         }
 
-        .admin-table-section {
+        .export-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .card-container {
             background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            overflow-x: auto;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
         }
 
-        .admin-table-section table {
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .card-header h2 i {
+            margin-right: 0.5rem;
+        }
+
+        .badge {
+            background-color: var(--light);
+            color: var(--gray);
+            padding: 0.35rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .admin-table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 700px; /* Ensure table doesn't get too small */
+            font-size: 0.9rem;
         }
 
-        .admin-table-section th,
-        .admin-table-section td {
-            text-align: left;
-            padding: 12px 15px;
-            border-bottom: 1px solid #e9ecef;
-        }
-
-        .admin-table-section th {
+        .admin-table thead th {
             background-color: #f8f9fa;
-            font-weight: 600;
-            color: #495057;
-            text-transform: uppercase;
-            font-size: 12px;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 500;
+            color: var(--gray);
+            border-bottom: 2px solid var(--gray-light);
         }
 
-        .admin-table-section tbody tr:hover {
-            background-color: #f2f2f2;
+        .admin-table tbody tr {
+            border-bottom: 1px solid var(--gray-light);
+            transition: var(--transition);
+        }
+
+        .admin-table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .admin-table tbody tr:hover {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+
+        .admin-table td {
+            padding: 1rem;
+            vertical-align: middle;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-not-found {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .status-found {
+            background-color: #d4edda;
+            color: #155724;
         }
 
         .status-pending {
-            color: #ffc107;
-            font-weight: 600;
-        }
-
-        .status-approved {
-            color: #28a745;
-            font-weight: 600;
+            background-color: #cce5ff;
+            color: #004085;
         }
 
         .status-rejected {
-            color: #dc3545;
-            font-weight: 600;
+            background-color: #f8d7da;
+            color: #721c24;
         }
 
-        .admin-action-buttons {
-            margin-top: 30px;
+        .actions-cell {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .empty-state {
+            padding: 2rem;
+            text-align: center;
+            color: var(--gray);
+        }
+
+        .empty-state i {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: #dee2e6;
+        }
+
+        .empty-state p {
+            margin-bottom: 1rem;
+        }
+
+        /* Confirmation Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: var(--transition);
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 500px;
+            padding: 1.5rem;
+            transform: translateY(20px);
+            transition: var(--transition);
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            margin-bottom: 1rem;
+        }
+
+        .modal-header h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .modal-header h3 i {
+            margin-right: 0.5rem;
+        }
+
+        .modal-body {
+            margin-bottom: 1.5rem;
+            color: var(--gray);
+        }
+
+        .modal-footer {
             display: flex;
             justify-content: flex-end;
-            gap: 15px;
-            flex-wrap: wrap;
+            gap: 0.75rem;
         }
 
-        .admin-btn {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 15px;
-            font-weight: 600;
-            transition: background-color 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            text-decoration: none; /* For anchor tags */
-        }
-
-        .admin-btn:hover {
-            background-color: #0056b3;
-        }
-
-        .admin-btn.approved-btn {
-            background-color: #28a745;
-        }
-        .admin-btn.approved-btn:hover {
-            background-color: #218838;
-        }
-
-        .admin-btn.revoke-btn {
-            background-color: #dc3545;
-        }
-        .admin-btn.revoke-btn:hover {
-            background-color: #c82333;
-        }
-
-        .admin-btn.view-report-btn {
-            background-color: #17a2b8;
-        }
-        .admin-btn.view-report-btn:hover {
-            background-color: #138496;
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 1024px) {
+        /* Responsive styles */
+        @media (max-width: 768px) {
             .admin-header {
                 flex-direction: column;
                 align-items: flex-start;
+                gap: 1rem;
             }
-
-            .admin-header .header-left,
-            .admin-header .header-right {
-                width: 100%;
-                justify-content: space-between;
-            }
-
-            .admin-main-content {
-                padding: 20px;
-            }
-
-            .admin-table-section table {
-                min-width: unset;
-            }
-
-            .admin-table-section table,
-            .admin-table-section thead,
-            .admin-table-section tbody,
-            .admin-table-section th,
-            .admin-table-section td,
-            .admin-table-section tr {
-                display: block;
-            }
-
-            .admin-table-section thead tr {
-                position: absolute;
-                top: -9999px;
-                left: -9999px;
-            }
-
-            .admin-table-section tr {
-                border: 1px solid #e9ecef;
-                margin-bottom: 10px;
-                border-radius: 8px;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            }
-
-            .admin-table-section td {
-                border: none;
-                position: relative;
-                padding-left: 50%;
-                text-align: right;
-            }
-
-            .admin-table-section td::before {
-                position: absolute;
-                left: 6px;
-                width: 45%;
-                padding-right: 10px;
-                white-space: nowrap;
-                text-align: left;
-                font-weight: 600;
-                color: #6c757d;
-            }
-
-            .admin-table-section td:nth-of-type(1)::before { content: "ID:"; }
-            .admin-table-section td:nth-of-type(2)::before { content: "Item Name:"; }
-            .admin-table-section td:nth-of-type(3)::before { content: "Username:"; }
-            .admin-table-section td:nth-of-type(4)::before { content: "Status:"; }
-            .admin-table-section td:nth-of-type(5)::before { content: "Date:"; }
-            .admin-table-section td:nth-of-type(6)::before { content: "Type:"; }
-            .admin-table-section td:nth-of-type(7)::before { content: "Actions:"; }
-
-            .controls-row {
+            
+            .search-export-container {
                 flex-direction: column;
-                align-items: stretch;
             }
-
-            .search-box {
-                max-width: 100%;
+            
+            .export-actions {
+                justify-content: flex-end;
             }
+            
+            .admin-table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
 
-            .sort-dropdown {
+        @media (max-width: 576px) {
+            .admin-container {
+                padding: 1rem;
+            }
+            
+            .modal-content {
+                margin: 0 1rem;
+            }
+            
+            .actions-cell {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .btn {
                 width: 100%;
-            }
-
-            .admin-action-buttons {
                 justify-content: center;
             }
         }
     </style>
 </head>
 <body>
-    <div class="admin-dashboard-container">
+    <div class="admin-container">
         <header class="admin-header">
-            <div class="header-left">
-                <button class="back-btn" onclick="window.history.back()">
-                    <i class="fas fa-arrow-left"></i> Back
+            <h1><i class="fas fa-shield-alt"></i> Admin Dashboard</h1>
+            <div class="admin-info">
+                <span class="admin-name"><i class="fas fa-user"></i> <?= htmlspecialchars($admin_full_name) ?></span>
+                <button class="btn btn-danger" onclick="window.location.href='logout.php'">
+                    <i class="fas fa-sign-out-alt"></i> Logout
                 </button>
-                <div class="admin-logo">FoundIt</div>
-            </div>
-            <div class="header-right">
-                <span style="font-weight: 600;">Welcome, <?php echo htmlspecialchars($admin_full_name); ?></span>
-                <img src="images/admin-avatar.png" alt="Admin" class="admin-avatar">
-                <a href="logout.php" class="logout-btn">
-                    <i class="fas fa-arrow-right-from-bracket"></i> Logout
-                </a>
             </div>
         </header>
 
-        <main class="admin-main-content">
-            <?php include 'message_modal.php'; // Include the message modal ?>
+        <div class="tab-container">
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="showTab('items-tab')">
+                    <i class="fas fa-box"></i> Reported Items
+                </button>
+                <button class="tab-btn" onclick="showTab('users-tab')">
+                    <i class="fas fa-users"></i> User Management
+                </button>
+            </div>
+        </div>
 
-            <div class="controls-row">
+        <!-- Reported Items Tab -->
+        <div id="items-tab" class="tab-content active">
+            <div class="search-export-container">
                 <form action="admin_homepage.php" method="GET" class="search-box">
-                    <input type="text" name="search" placeholder="Search by item name, description, location, or category..." class="search-input" value="<?php echo htmlspecialchars($search_query); ?>">
-                    <button type="submit" class="search-icon"><i class="fas fa-search"></i></button>
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="search" placeholder="Search items..." value="<?= htmlspecialchars($search_query) ?>">
                 </form>
-                <div class="sort-dropdown">
-                    <select onchange="window.location.href = this.value;">
-                        <option value="admin_homepage.php?sort=date_desc" <?php echo (!isset($_GET['sort']) || $_GET['sort'] === 'date_desc') ? 'selected' : ''; ?>>Date (Newest First)</option>
-                        <option value="admin_homepage.php?sort=date_asc" <?php echo (isset($_GET['sort']) && $_GET['sort'] === 'date_asc') ? 'selected' : ''; ?>>Date (Oldest First)</option>
-                        <option value="admin_homepage.php?sort=name_asc" <?php echo (isset($_GET['sort']) && $_GET['sort'] === 'name_asc') ? 'selected' : ''; ?>>Item Name (A-Z)</option>
-                        <option value="admin_homepage.php?sort=name_desc" <?php echo (isset($_GET['sort']) && $_GET['sort'] === 'name_desc') ? 'selected' : ''; ?>>Item Name (Z-A)</option>
-                    </select>
-                    <i class="fas fa-caret-down"></i>
+                <div class="export-actions">
+                    <form method="POST">
+                        <button type="submit" name="export_excel" class="btn btn-success">
+                            <i class="fas fa-file-excel"></i> Export Items
+                        </button>
+                    </form>
                 </div>
             </div>
 
-            <section class="admin-table-section">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Item Name</th>
-                            <th>Type</th>
-                            <th>Username</th>
-                            <th>Status</th>
-                            <th>Date</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (!empty($all_reported_items)): ?>
-                            <?php
-                            $sorted_items = $all_reported_items;
-                            $sort_by = $_GET['sort'] ?? 'date_desc';
-
-                            usort($sorted_items, function($a, $b) use ($sort_by) {
-                                switch ($sort_by) {
-                                    case 'date_asc':
-                                        return strtotime($a['created_at']) - strtotime($b['created_at']);
-                                    case 'date_desc':
-                                        return strtotime($b['created_at']) - strtotime($a['created_at']);
-                                    case 'name_asc':
-                                        return strcmp($a['item_name'], $b['item_name']);
-                                    case 'name_desc':
-                                        return strcmp($b['item_name'], $a['item_name']);
-                                    default:
-                                        return strtotime($b['created_at']) - strtotime($a['created_at']);
-                                }
-                            });
-                            ?>
-                            <?php foreach ($sorted_items as $item): ?>
+            <div class="card-container">
+                <div class="card-header">
+                    <h2><i class="fas fa-list"></i> Reported Items</h2>
+                    <span class="badge"><?= count($all_reported_items) ?> items</span>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Item Name</th>
+                                <th>Type</th>
+                                <th>Reported By</th>
+                                <th>Status</th>
+                                <th>Date Reported</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (!empty($all_reported_items)): ?>
+                                <?php foreach ($all_reported_items as $item): ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars($item['id']) ?></td>
+                                        <td><?= htmlspecialchars($item['item_name']) ?></td>
+                                        <td><?= htmlspecialchars($item['item_type']) ?></td>
+                                        <td><?= htmlspecialchars($user_names[$item['user_id']] ?? 'N/A') ?></td>
+                                        <td><?= formatStatus($item['status'], $item['item_type']) ?></td>
+                                        <td><?= date('M j, Y h:i A', strtotime($item['created_at'])) ?></td>
+                                        <td class="actions-cell">
+                                            <a href="view_item.php?id=<?= htmlspecialchars($item['id']) ?>&type=<?= strtolower(htmlspecialchars($item['item_type'])) ?>" class="btn btn-primary">
+                                                <i class="fas fa-eye"></i> View
+                                            </a>
+                                            <button class="btn btn-danger" onclick="showDeleteConfirmation(<?= htmlspecialchars($item['id']) ?>, '<?= htmlspecialchars($item['item_name']) ?>', 'item')">
+                                                <i class="fas fa-trash"></i> Delete
+                                            </button>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
                                 <tr>
-                                    <td data-label="ID"><?php echo htmlspecialchars($item['id']); ?></td>
-                                    <td data-label="Item Name"><?php echo htmlspecialchars($item['item_name']); ?></td>
-                                    <td data-label="Type"><?php echo htmlspecialchars($item['item_type']); ?></td>
-                                    <td data-label="Username"><?php echo htmlspecialchars($user_names[$item['user_id']] ?? 'N/A'); ?></td>
-                                    <td data-label="Status" class="status-<?php echo htmlspecialchars($item['status']); ?>">
-                                        <?php echo formatStatus($item['status'], $item['item_type']); ?>
-                                    </td>
-                                    <td data-label="Date"><?php echo date('d/m/Y', strtotime($item['created_at'])); ?></td>
-                                    <td data-label="Actions">
-                                        <a href="view_item.php?id=<?php echo htmlspecialchars($item['id']); ?>&type=<?php echo strtolower(htmlspecialchars($item['item_type'])); ?>" class="admin-btn" style="padding: 8px 12px; font-size: 13px; margin-right: 5px; background-color: #007bff;">View</a>
-                                        <?php if ($item['status'] === 'pending_approval'): ?>
-                                            <a href="admin_update_item_status.php?id=<?php echo htmlspecialchars($item['id']); ?>&type=<?php echo strtolower(htmlspecialchars($item['item_type'])); ?>&new_status=approved" class="admin-btn approved-btn" style="padding: 8px 12px; font-size: 13px; margin-right: 5px;">Approve</a>
-                                            <a href="admin_update_item_status.php?id=<?php echo htmlspecialchars($item['id']); ?>&type=<?php echo strtolower(htmlspecialchars($item['item_type'])); ?>&new_status=rejected" class="admin-btn revoke-btn" style="padding: 8px 12px; font-size: 13px; margin-right: 5px;">Reject</a>
-                                        <?php elseif ($item['status'] === 'approved' || $item['status'] === 'found' || $item['status'] === 'claimed'): ?>
-                                            <?php if ($item['item_type'] === 'Lost'): ?>
-                                                <a href="admin_update_item_status.php?id=<?php echo htmlspecialchars($item['id']); ?>&type=<?php echo strtolower(htmlspecialchars($item['item_type'])); ?>&new_status=not_found" class="admin-btn revoke-btn" style="padding: 8px 12px; font-size: 13px; margin-right: 5px;">Mark Not Found</a>
-                                            <?php elseif ($item['item_type'] === 'Found'): ?>
-                                                <a href="admin_update_item_status.php?id=<?php echo htmlspecialchars($item['id']); ?>&type=<?php echo strtolower(htmlspecialchars($item['item_type'])); ?>&new_status=unclaimed" class="admin-btn revoke-btn" style="padding: 8px 12px; font-size: 13px; margin-right: 5px;">Mark Unclaimed</a>
-                                            <?php endif; ?>
+                                    <td colspan="7" class="empty-state">
+                                        <i class="fas fa-box-open"></i>
+                                        <p>No items found <?= !empty($search_query) ? 'matching your search' : '' ?></p>
+                                        <?php if (!empty($search_query)): ?>
+                                            <a href="admin_homepage.php" class="btn btn-primary">
+                                                <i class="fas fa-times"></i> Clear search
+                                            </a>
                                         <?php endif; ?>
                                     </td>
                                 </tr>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <tr>
-                                <td colspan="7" style="text-align: center;">No items reported yet. <?php echo !empty($search_query) ? 'Try a different search term.' : ''; ?></td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </section>
-
-            <!-- Admin action buttons (for selected items, will require JS and backend logic) -->
-            <div class="admin-action-buttons">
-            <!-- These buttons would typically work with checkboxes next to table rows -->
-            <button class="admin-btn approved-btn" onclick="alert('Approve functionality to be implemented.')">Approve Selected</button>
-            <button class="admin-btn revoke-btn" onclick="alert('Revoke functionality to be implemented.')">Revoke Selected</button>
-            <a href="admin_generate_report.php" class="admin-btn" style="background-color: #17a2b8; text-decoration: none;" target="_blank">
-                <i class="fas fa-file-csv"></i> Generate Report
-            </a>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
-        </main>
+
+        <!-- User Management Tab -->
+        <div id="users-tab" class="tab-content">
+            <div class="search-export-container">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="user-search" placeholder="Search users...">
+                </div>
+                <div class="export-actions">
+                    <form method="POST">
+                        <button type="submit" name="export_users_excel" class="btn btn-success">
+                            <i class="fas fa-file-excel"></i> Export Users
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card-container">
+                <div class="card-header">
+                    <h2><i class="fas fa-users"></i> Registered Users</h2>
+                    <span class="badge"><?= count($users) ?> users</span>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Full Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Registered</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (!empty($users)): ?>
+                                <?php foreach ($users as $user): ?>
+                                    <tr class="user-row">
+                                        <td><?= htmlspecialchars($user['id']) ?></td>
+                                        <td><?= htmlspecialchars($user['full_name']) ?></td>
+                                        <td><?= htmlspecialchars($user['email']) ?></td>
+                                        <td><?= htmlspecialchars($user['phone_number'] ?? 'N/A') ?></td>
+                                        <td><?= date('M j, Y', strtotime($user['created_at'])) ?></td>
+                                        <td class="user-actions">
+                                            <?php if ($user['id'] == $_SESSION['user_id']): ?>
+                                                <span class="btn btn-light"><i class="fas fa-crown"></i> Current Admin</span>
+                                            <?php else: ?>
+                                                <button class="btn btn-danger" onclick="showDeleteConfirmation(<?= $user['id'] ?>, '<?= htmlspecialchars($user['full_name']) ?>', 'user')">
+                                                    <i class="fas fa-trash"></i> Delete
+                                                </button>
+                                            <?php endif; ?>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="6" class="empty-state">
+                                        <i class="fas fa-user-slash"></i>
+                                        <p>No registered users found</p>
+                                    </td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-exclamation-triangle"></i> Confirm Deletion</h3>
+            </div>
+            <div class="modal-body" id="deleteModalMessage">
+                Are you sure you want to delete this item?
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-light" onclick="hideModal()">Cancel</button>
+                <a href="#" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash"></i> Confirm Delete
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab functionality
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Delete confirmation modal
+        let currentItemToDelete = null;
+        let deleteType = 'item';
+        
+        function showDeleteConfirmation(id, name, type) {
+            deleteType = type;
+            currentItemToDelete = id;
+            
+            const modalMessage = document.getElementById('deleteModalMessage');
+            const confirmBtn = document.getElementById('confirmDeleteBtn');
+            
+            if (type === 'item') {
+                modalMessage.innerHTML = `
+                    <p>You are about to delete:</p>
+                    <p><strong>${name}</strong> (ID: ${id})</p>
+                    <p class="text-danger">This action cannot be undone!</p>
+                `;
+                confirmBtn.href = `admin_delete_item.php?id=${id}`;
+            } else {
+                modalMessage.innerHTML = `
+                    <p>You are about to delete user:</p>
+                    <p><strong>${name}</strong> (ID: ${id})</p>
+                    <p class="text-danger">This will permanently delete the user account and all their items!</p>
+                `;
+                confirmBtn.href = `admin_delete_user.php?id=${id}`;
+            }
+            
+            document.getElementById('deleteModal').classList.add('active');
+        }
+
+        function hideModal() {
+            document.getElementById('deleteModal').classList.remove('active');
+            currentItemToDelete = null;
+        }
+        
+        // User search functionality
+        document.getElementById('user-search').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            document.querySelectorAll('.user-row').forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        });
+        
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                hideModal();
+            }
+        });
+    </script>
 </body>
 </html>

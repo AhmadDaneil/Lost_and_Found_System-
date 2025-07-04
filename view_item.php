@@ -3,475 +3,381 @@ session_start();
 require_once 'db_connect.php';
 require_once 'config.php';
 
-// Enable error reporting for debugging
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// Check if user is logged in
-if (!isset($_SESSION['user_id'])) {
-    $_SESSION['error_message'] = "You must be logged in to view item details.";
-    header("Location: login.php"); // Updated from login.html to login.php
+// Check admin authentication
+if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
+    $_SESSION['error_message'] = "You must be logged in as an administrator to access this page.";
+    header("Location: login.php");
     exit();
 }
 
+$admin_full_name = $_SESSION['full_name'] ?? 'Admin';
+
+// Get item details
 $item_id = $_GET['id'] ?? null;
-$item_type = $_GET['type'] ?? null; // 'lost' or 'found'
+$item_type = $_GET['type'] ?? null;
 
-$item_details = null;
-$reporter_telegram = null;
-$is_owner = false; // Flag to check if the logged-in user is the item owner
-
-if ($item_id && ($item_type === 'lost' || $item_type === 'found')) {
-    $conn = getDbConnection();
-
-    if ($item_type === 'lost') {
-        $table = 'lost_items';
-        $date_field = 'date_lost';
-        $location_field = 'lost_location';
-        $status_options = [
-            'not_found' => '❌ Not found',
-            'found' => '✅ Found'
-        ];
-    } else { // $item_type === 'found'
-        $table = 'found_items';
-        $date_field = 'date_found';
-        $location_field = 'found_location';
-        $status_options = [
-            'unclaimed' => '❌ Unclaimed',
-            'claimed' => '✅ Claimed by owner'
-        ];
-    }
-
-    // Fetch item details and reporter's Telegram username
-    $stmt = $conn->prepare("SELECT i.id, i.item_name, i.description, i.$date_field, i.$location_field, i.category, i.image_path, i.status, i.user_id, u.telegram_username FROM $table i JOIN users u ON i.user_id = u.id WHERE i.id = ?");
-    $stmt->bind_param("i", $item_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    if ($result->num_rows === 1) {
-        $item_details = $result->fetch_assoc();
-        $reporter_telegram = $item_details['telegram_username'];
-
-        // Check if the logged-in user is the owner of this item
-        if ($_SESSION['user_id'] == $item_details['user_id']) {
-            $is_owner = true;
-        }
-    } else {
-        $_SESSION['error_message'] = "Item not found or invalid type.";
-        header("Location: homepage.php");
-        exit();
-    }
-
-    $stmt->close();
-    closeDbConnection($conn);
-} else {
-    $_SESSION['error_message'] = "Invalid item ID or type provided.";
-    header("Location: homepage.php");
+if (!$item_id || !$item_type) {
+    $_SESSION['error_message'] = "Invalid item request.";
+    header("Location: admin_homepage.php");
     exit();
 }
 
-// Function to format status for display
+$conn = getDbConnection();
+
+// Get item details based on type
+$item = null;
+$user = null;
+
+if ($item_type === 'lost') {
+    $stmt = $conn->prepare("SELECT * FROM lost_items WHERE id = ?");
+} else {
+    $stmt = $conn->prepare("SELECT * FROM found_items WHERE id = ?");
+}
+
+$stmt->bind_param("i", $item_id);
+$stmt->execute();
+$result = $stmt->get_result();
+$item = $result->fetch_assoc();
+$stmt->close();
+
+if (!$item) {
+    $_SESSION['error_message'] = "Item not found.";
+    header("Location: admin_homepage.php");
+    exit();
+}
+
+// Get user details
+$stmt_user = $conn->prepare("SELECT * FROM users WHERE id = ?");
+$stmt_user->bind_param("i", $item['user_id']);
+$stmt_user->execute();
+$user = $stmt_user->get_result()->fetch_assoc();
+$stmt_user->close();
+
+closeDbConnection($conn);
+
 function formatStatus($status, $item_type) {
-    if ($item_type === 'lost') {
-        switch ($status) {
-            case 'not_found': return '❌ Not found';
-            case 'found': return '✅ Found';
-            case 'pending_approval': return '⏳ Pending Approval';
-            case 'rejected': return '🚫 Rejected'; // Added rejected status
-            default: return $status;
-        }
-    } else { // found_items
-        switch ($status) {
-            case 'unclaimed': return '❌ Unclaimed';
-            case 'claimed': return '✅ Claimed by owner';
-            case 'pending_approval': return '⏳ Pending Approval';
-            case 'rejected': return '🚫 Rejected'; // Added rejected status
-            default: return $status;
-        }
-    }
+    $statusClasses = [
+        'lost' => [
+            'not_found' => ['class' => 'status-not-found', 'text' => 'Not Found'],
+            'found' => ['class' => 'status-found', 'text' => 'Found'],
+            'pending_approval' => ['class' => 'status-pending', 'text' => 'Pending Approval'],
+            'rejected' => ['class' => 'status-rejected', 'text' => 'Rejected']
+        ],
+        'found' => [
+            'unclaimed' => ['class' => 'status-not-found', 'text' => 'Unclaimed'],
+            'claimed' => ['class' => 'status-found', 'text' => 'Claimed'],
+            'pending_approval' => ['class' => 'status-pending', 'text' => 'Pending Approval'],
+            'rejected' => ['class' => 'status-rejected', 'text' => 'Rejected']
+        ]
+    ];
+
+    $statusInfo = $statusClasses[$item_type][$status] ?? 
+                 ['class' => '', 'text' => ucfirst(str_replace('_', ' ', $status))];
+
+    return sprintf(
+        '<span class="status-badge %s">%s</span>',
+        $statusInfo['class'],
+        $statusInfo['text']
+    );
 }
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title><?php echo ucfirst($item_type); ?> Item - FoundIt</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet"/>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: 'Poppins', sans-serif;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Item | FoundIt</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --danger: #f72585;
+            --success: #4cc9f0;
+            --warning: #ff9f1c;
+            --dark: #212529;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+            --gray-light: #e9ecef;
+            --border-radius: 0.5rem;
+            --box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --transition: all 0.15s ease-in-out;
+        }
 
-    body {
-      background-color: #f5ff9c;
-      padding: 20px;
-    }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 30px;
-    }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f5f7fa;
+            color: var(--dark);
+            line-height: 1.6;
+        }
 
-    .logo {
-      font-size: 32px;
-      font-weight: 800;
-      text-shadow: 2px 2px 2px rgba(0, 0, 0, 0.1);
-    }
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
 
-    .icons {
-      display: flex;
-      gap: 20px;
-    }
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
 
-    .icon-btn,
-    .back-btn,
-    .edit-btn {
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      background-color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 2px solid #000;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
+        .admin-header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
 
-    .icon-btn:hover,
-    .back-btn:hover,
-    .edit-btn:hover {
-      background-color: #000;
-      transform: scale(1.1);
-    }
+        .admin-header .admin-info {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
 
-    .icon-btn:hover svg,
-    .back-btn:hover svg,
-    .edit-btn:hover svg {
-      fill: #f5ff9c;
-    }
+        .admin-name {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+        }
 
-    .icon-btn svg,
-    .back-btn svg,
-    .edit-btn svg {
-      width: 20px;
-      height: 20px;
-      fill: #000;
-      transition: fill 0.3s ease;
-    }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            border: 1px solid transparent;
+        }
 
-    .content-box {
-      background-color: #fffdd0;
-      padding: 30px;
-      border-radius: 16px;
-      max-width: 900px;
-      margin: 0 auto;
-      position: relative;
-    }
+        .btn i {
+            font-size: 0.9rem;
+        }
 
-    .back-btn {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-    }
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
 
-    .edit-btn {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-    }
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+        }
 
-    .section-title {
-      text-align: center;
-      font-weight: 600;
-      margin-bottom: 30px;
-      font-size: 20px;
-    }
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
 
-    .top-content {
-      display: flex;
-      gap: 30px;
-      flex-wrap: wrap;
-    }
+        .btn-danger:hover {
+            background-color: #e5177a;
+        }
 
-    .image-box {
-      background-color: #8b1e1e;
-      color: #fff;
-      width: 180px;
-      height: 200px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      border-radius: 12px;
-      overflow: hidden;
-    }
+        .btn-light {
+            background-color: var(--light);
+            color: var(--dark);
+            border: 1px solid var(--gray-light);
+        }
 
-    .image-box img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
+        .btn-light:hover {
+            background-color: #e2e6ea;
+        }
 
-    .details-box {
-      flex: 1;
-      background-color: white;
-      padding: 20px;
-      border-radius: 12px;
-      display: flex;
-      justify-content: space-between;
-      flex-direction: column;
-    }
+        .card-container {
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
 
-    .details-box h3 {
-      font-size: 20px;
-      margin-bottom: 8px;
-    }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
 
-    .details-box p {
-      font-size: 14px;
-      color: #444;
-      line-height: 1.4;
-    }
+        .card-header h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
 
-    .details-date {
-      text-align: right;
-      font-size: 14px;
-      color: #666;
-    }
+        .card-header h2 i {
+            margin-right: 0.5rem;
+        }
 
-    .description-box {
-      margin-top: 20px;
-      background-color: white;
-      padding: 20px;
-      border-radius: 12px;
-      min-height: 100px;
-      font-size: 14px;
-      color: #444;
-    }
+        .item-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
 
-    .status-box {
-      margin-top: 20px;
-      background-color: white;
-      padding: 16px;
-      border-radius: 12px;
-      font-size: 14px;
-      color: #444;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-    }
+        @media (max-width: 768px) {
+            .item-details {
+                grid-template-columns: 1fr;
+            }
+        }
 
-    .status-box strong {
-      display: inline-block;
-      width: 60px; /* Adjust as needed */
-      color: #222;
-    }
+        .detail-group {
+            margin-bottom: 1rem;
+        }
 
-    .status-update-btn {
-        background-color: #8b1e1e;
-        color: white;
-        border: none;
-        padding: 8px 15px;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: background-color 0.3s ease;
-        font-weight: 600;
-        margin-left: 10px; /* Space from status text */
-    }
+        .detail-label {
+            font-weight: 500;
+            color: var(--gray);
+            margin-bottom: 0.25rem;
+            display: block;
+        }
 
-    .status-update-btn:hover {
-        background-color: #6a1515;
-    }
+        .detail-value {
+            font-size: 1rem;
+            padding: 0.5rem;
+            background-color: var(--light);
+            border-radius: var(--border-radius);
+        }
 
-    /* Message Box for confirmations/errors */
-    .message-box {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background-color: #fffdd0;
-        border: 2px solid #8b1e1e;
-        padding: 30px;
-        border-radius: 15px;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-        z-index: 1000;
-        text-align: center;
-        max-width: 400px;
-        width: 90%;
-        display: none; /* Hidden by default */
-    }
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
 
-    .message-box h3 {
-        margin-bottom: 20px;
-        color: #8b1e1e;
-    }
+        .status-not-found {
+            background-color: #fff3cd;
+            color: #856404;
+        }
 
-    .message-box .button-group {
-        display: flex;
-        justify-content: center;
-        gap: 15px;
-        margin-top: 20px;
-    }
+        .status-found {
+            background-color: #d4edda;
+            color: #155724;
+        }
 
-    .message-box button {
-        padding: 10px 20px;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: 600;
-        transition: background-color 0.3s ease;
-    }
+        .status-pending {
+            background-color: #cce5ff;
+            color: #004085;
+        }
 
-    .message-box .confirm-btn {
-        background-color: #4CAF50; /* Green */
-        color: white;
-    }
+        .status-rejected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
 
-    .message-box .confirm-btn:hover {
-        background-color: #45a049;
-    }
+        .actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
 
-    .message-box .cancel-btn {
-        background-color: #f44336; /* Red */
-        color: white;
-    }
-
-    .message-box .cancel-btn:hover {
-        background-color: #da190b;
-    }
-  </style>
+        /* Responsive styles */
+        @media (max-width: 576px) {
+            .admin-container {
+                padding: 1rem;
+            }
+            
+            .actions {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
 </head>
 <body>
+    <div class="admin-container">
+        <header class="admin-header">
+            <h1><i class="fas fa-shield-alt"></i> Admin Dashboard</h1>
+            <div class="admin-info">
+                <span class="admin-name"><i class="fas fa-user"></i> <?= htmlspecialchars($admin_full_name) ?></span>
+                <button class="btn btn-danger" onclick="window.location.href='logout.php'">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </header>
 
-  <div class="header">
-    <div class="logo">FoundIt</div>
-    <div class="icons">
-      <!-- Home Icon -->
-      <a href="homepage.php" class="icon-btn" title="Home">
-        <svg viewBox="0 0 24 24">
-          <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-6v-6H10v6H4a1 1 0 0 1-1-1V9.5z"/>
-        </svg>
-      </a>
-      <!-- Telegram Icon (General support, not item specific) -->
-      <a href="https://t.me/FoundItSupport" target="_blank" class="icon-btn" title="Chat on Telegram">
-        <svg viewBox="0 0 24 24">
-          <path d="M9.036 17.813c-.267 0-.224-.101-.316-.354l-1.105-3.641 8.506-5.375c.388-.264.747.084.58.526l-2.44 7.768c-.135.408-.355.51-.722.318l-2.006-1.478-0.97.936c-.1.1-.184.184-.378.184zM12 0C5.373 0 0 5.373 0 12c0 6.628 5.373 12 12 12 6.628 0 12-5.372 12-12 0-6.627-5.372-12-12-12z"/>
-        </svg>
-      </a>
-    </div>
-  </div>
-
-  <div class="content-box">
-    <!-- Back Button -->
-    <a href="homepage.php" class="back-btn" title="Back to Home">
-      <svg viewBox="0 0 24 24">
-        <path d="M15 18l-6-6 6-6"/>
-      </svg>
-    </a>
-
-    <?php if ($is_owner): // Show edit button only if current user is the owner ?>
-    <!-- Edit Button (links to the specific item's edit page) -->
-    <a href="report_<?php echo htmlspecialchars($item_type); ?>_form.php?id=<?php echo htmlspecialchars($item_id); ?>" class="edit-btn" title="Edit <?php echo ucfirst($item_type); ?> Item">
-      <svg viewBox="0 0 24 24">
-        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM21.71 6.04a1.003 1.003 0 0 0 0-1.41l-2.34-2.34a1.003 1.003 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-      </svg>
-    </a>
-    <?php endif; ?>
-
-    <div class="section-title"><?php echo ucfirst($item_type); ?> Item</div>
-
-    <div class="top-content">
-      <div class="image-box">
-        <?php if ($item_details['image_path'] && file_exists($item_details['image_path'])): ?>
-            <img src="<?php echo htmlspecialchars(BASE_URL . $item_details['image_path']); ?>" alt="<?php echo htmlspecialchars($item_details['item_name']); ?>">
-        <?php else: ?>
-            No Image
-        <?php endif; ?>
-      </div>
-
-      <div class="details-box">
-        <div>
-          <h3><?php echo htmlspecialchars($item_details['item_name']); ?></h3>
-          <p>Category: <?php echo htmlspecialchars($item_details['category']); ?><br/>
-          <?php echo ucfirst($item_type); ?> Location: <?php echo htmlspecialchars($item_details[$location_field]); ?></p>
+        <div class="card-container">
+            <div class="card-header">
+                <h2><i class="fas fa-box"></i> Item Details</h2>
+                <span class="detail-value"><?= ucfirst($item_type) ?> Item #<?= htmlspecialchars($item['id']) ?></span>
+            </div>
+            
+            <div class="item-details">
+                <div>
+                    <div class="detail-group">
+                        <span class="detail-label">Item Name</span>
+                        <div class="detail-value"><?= htmlspecialchars($item['item_name']) ?></div>
+                    </div>
+                    
+                    <div class="detail-group">
+                        <span class="detail-label">Category</span>
+                        <div class="detail-value"><?= htmlspecialchars($item['category']) ?></div>
+                    </div>
+                    
+                    <div class="detail-group">
+                        <span class="detail-label">Status</span>
+                        <div class="detail-value"><?= formatStatus($item['status'], $item_type) ?></div>
+                    </div>
+                    
+                    <div class="detail-group">
+                        <span class="detail-label">Location</span>
+                        <div class="detail-value"><?= htmlspecialchars($item_type === 'lost' ? $item['lost_location'] : $item['found_location']) ?></div>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="detail-group">
+                        <span class="detail-label">Description</span>
+                        <div class="detail-value"><?= nl2br(htmlspecialchars($item['description'])) ?></div>
+                    </div>
+                    
+                    <div class="detail-group">
+                        <span class="detail-label">Reported By</span>
+                        <div class="detail-value">
+                            <?= htmlspecialchars($user['full_name'] ?? 'Unknown') ?><br>
+                            (User ID: <?= htmlspecialchars($item['user_id']) ?>)
+                        </div>
+                    </div>
+                    
+                    <div class="detail-group">
+                        <span class="detail-label">Date Reported</span>
+                        <div class="detail-value"><?= date('M j, Y h:i A', strtotime($item['created_at'])) ?></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="actions">
+                <a href="admin_homepage.php" class="btn btn-light">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+                <a href="admin_delete_item.php?id=<?= $item['id'] ?>" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this item?')">
+                    <i class="fas fa-trash"></i> Delete Item
+                </a>
+            </div>
         </div>
-        <div class="details-date">Date: <?php echo htmlspecialchars($item_details[$date_field]); ?></div>
-      </div>
     </div>
-
-    <div class="description-box">
-      <?php echo nl2br(htmlspecialchars($item_details['description'])); ?>
-    </div>
-
-    <div class="status-box">
-      <strong>Status:</strong> <?php echo formatStatus($item_details['status'], $item_type); ?>
-      <?php if ($is_owner): // Show status update button only if current user is the owner ?>
-        <?php if ($item_type === 'lost' && $item_details['status'] === 'not_found'): ?>
-            <button class="status-update-btn" onclick="showConfirmation('found')">Mark as Found</button>
-        <?php elseif ($item_type === 'found' && $item_details['status'] === 'unclaimed'): ?>
-            <button class="status-update-btn" onclick="showConfirmation('claimed')">Mark as Claimed</button>
-        <?php endif; ?>
-      <?php endif; ?>
-    </div>
-
-    <?php if ($reporter_telegram): ?>
-    <div class="status-box" style="margin-top: 10px;">
-        <strong>Contact:</strong>
-        <a href="https://t.me/<?php echo htmlspecialchars(ltrim($reporter_telegram, '@')); ?>" target="_blank" class="status-update-btn" style="background-color: #0088cc;">
-            <svg style="width:20px;height:20px;vertical-align:middle;margin-right:5px;fill:white;" viewBox="0 0 24 24">
-                <path d="M9.036 17.813c-.267 0-.224-.101-.316-.354l-1.105-3.641 8.506-5.375c.388-.264.747.084.58.526l-2.44 7.768c-.135.408-.355.51-.722.318l-2.006-1.478-0.97.936c-.1.1-.184.184-.378.184zM12 0C5.373 0 0 5.373 0 12c0 6.628 5.373 12 12 12 6.628 0 12-5.372 12-12 0-6.627-5.372-12-12-12z"/>
-            </svg>
-            Chat with Reporter
-        </a>
-    </div>
-    <?php endif; ?>
-  </div>
-
-  <!-- Confirmation Modal -->
-  <div id="confirmationModal" class="message-box">
-    <h3>Are you sure?</h3>
-    <p id="confirmationMessage"></p>
-    <div class="button-group">
-      <button class="confirm-btn" id="confirmAction">Yes</button>
-      <button class="cancel-btn" onclick="hideConfirmation()">No</button>
-    </div>
-  </div>
-
-  <script>
-    let currentStatusAction = '';
-    const itemId = <?php echo json_encode($item_id); ?>;
-    const itemType = <?php echo json_encode($item_type); ?>;
-
-    function showConfirmation(action) {
-      currentStatusAction = action;
-      const modal = document.getElementById('confirmationModal');
-      const message = document.getElementById('confirmationMessage');
-      if (action === 'found') {
-        message.textContent = "Are you sure you want to mark this lost item as 'Found'? This action cannot be undone.";
-      } else if (action === 'claimed') {
-        message.textContent = "Are you sure you want to mark this found item as 'Claimed by owner'? This action cannot be undone.";
-      }
-      modal.style.display = 'block';
-    }
-
-    function hideConfirmation() {
-      document.getElementById('confirmationModal').style.display = 'none';
-    }
-
-    document.getElementById('confirmAction').addEventListener('click', function() {
-      hideConfirmation();
-      // Redirect to update status script with item ID, type, and new status
-      window.location.href = `update_item_status.php?id=${itemId}&type=${itemType}&new_status=${currentStatusAction}`;
-    });
-  </script>
-
 </body>
 </html>
