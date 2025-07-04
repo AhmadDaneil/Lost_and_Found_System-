@@ -3,6 +3,8 @@ session_start();
 require_once 'db_connect.php';
 require_once 'config.php';
 
+$darkMode = isset($_SESSION['dark_mode']) && $_SESSION['dark_mode'] === true;
+
 // Enable error reporting for debugging
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
@@ -396,9 +398,55 @@ closeDbConnection($conn);
         padding: 10px 12px;
       }
     }
+/* Dark Mode Styles */
+body.dark-mode {
+  background-color: #121212;
+  color: #f5f5f5;
+}
+
+/* Profile card background */
+body.dark-mode .profile-container {
+  background-color: #1e1e1e;
+  color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
+}
+
+/* Profile header and name */
+body.dark-mode .profile-header,
+body.dark-mode .profile-name,
+body.dark-mode .profile-email {
+  color: #ffffff;
+}
+
+/* Profile detail rows */
+body.dark-mode .profile-details label,
+body.dark-mode .profile-details span {
+  color: #f0f0f0;
+}
+
+/* Edit Profile Button */
+body.dark-mode .edit-profile-button {
+  background-color: #bb4430;
+  color: #ffffff;
+  border: none;
+}
+
+body.dark-mode .edit-profile-button:hover {
+  background-color: #e74c3c;
+  color: #ffffff;
+}
+
+/* Avatar circle */
+body.dark-mode .avatar-circle {
+  background-color: #8b0000;
+  color: #ffffff;
+  border: 3px solid #ffffff33;
+}
+
   </style>
 </head>
-<body>
+<body class="<?php echo $darkMode ? 'dark-mode' : ''; ?>">
 
   <div class="header">
     <div class="logo">FoundIt</div>

@@ -3,6 +3,8 @@ session_start();
 require_once 'db_connect.php';
 require_once 'config.php';
 
+$darkMode = isset($_SESSION['dark_mode']) && $_SESSION['dark_mode'] === true;
+
 // Enable error reporting for debugging
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
@@ -323,9 +325,62 @@ function formatStatus($status) {
         height: 150px;
       }
     }
+    /* Dark Mode Styles */
+body.dark-mode {
+  background-color: #121212;
+  color: #f5f5f5;
+}
+
+body.dark-mode .profile-container,
+body.dark-mode .edit-form-container {
+  background-color: #1e1e1e;
+  color: #f5f5f5;
+  box-shadow: 0 5px 15px rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .detail-row span:first-child {
+  color: #ccc;
+}
+
+body.dark-mode .detail-row span:last-child {
+  color: #aaa;
+}
+
+body.dark-mode .edit-profile-btn,
+body.dark-mode .save-changes-btn {
+  background-color: #bb86fc;
+  color: #000;
+}
+
+body.dark-mode .edit-profile-btn:hover,
+body.dark-mode .save-changes-btn:hover {
+  background-color: #9c5de0;
+}
+
+body.dark-mode .cancel-edit-btn {
+  background-color: #cf6679;
+}
+
+body.dark-mode .cancel-edit-btn:hover {
+  background-color: #b74a5c;
+}
+
+body.dark-mode .icon-btn,
+body.dark-mode .back-btn {
+  background-color: #333;
+  border-color: #f5f5f5;
+  color: #f5f5f5;
+}
+
+body.dark-mode .icon-btn:hover,
+body.dark-mode .back-btn:hover {
+  background-color: #f5f5f5;
+  color: #121212;
+}
+
   </style>
 </head>
-<body>
+<body class="<?php echo $darkMode ? 'dark-mode' : ''; ?>">
   <div class="navbar">
     <div class="logo">FoundIt</div>
     <div class="search-box">

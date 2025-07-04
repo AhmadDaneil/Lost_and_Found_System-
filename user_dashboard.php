@@ -3,6 +3,7 @@ session_start();
 require_once 'db_connect.php';
 require_once 'config.php';
 
+$darkMode = $_SESSION['dark_mode'] ?? false;
 // Enable error reporting for debugging
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
@@ -93,545 +94,555 @@ function formatStatus($status) {
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        body {
-            background-color: #f5ff9c;
-            font-family: 'Poppins', sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex; /* Ensure flexbox for layout */
-            min-height: 100vh; /* Full viewport height */
-        }
-
-        .dashboard-container {
-            display: flex;
-            width: 100%;
-            background-color: #fffdd0;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            margin: 20px;
-            overflow: hidden; /* For rounded corners */
-        }
-
-        .sidebar {
-            width: 250px;
-            background-color: #8b1e1e;
-            color: white;
-            padding: 30px 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .sidebar .logo {
-            font-size: 36px;
-            font-weight: 800;
-            margin-bottom: 30px;
-            text-shadow: 2px 2px 2px rgba(0, 0, 0, 0.2);
-        }
-
-        .user-profile {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        .user-profile .avatar {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 3px solid white;
-            margin-bottom: 10px;
-        }
-
-        .user-profile .user-info .user-name {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 5px;
-        }
-
-        .user-profile .user-info .user-email {
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.8);
-            margin-bottom: 10px;
-        }
-
-        .telegram-link-btn {
-            display: inline-flex;
-            align-items: center;
-            background-color: #0088cc; /* Telegram blue */
-            color: white;
-            padding: 8px 15px;
-            border-radius: 20px;
-            text-decoration: none;
-            font-size: 14px;
-            transition: background-color 0.3s ease;
-        }
-
-        .telegram-link-btn i {
-            margin-right: 8px;
-        }
-
-        .telegram-link-btn:hover {
-            background-color: #006699;
-        }
-
-        .navigation ul {
-            list-style: none;
-            padding: 0;
-            width: 100%;
-        }
-
-        .navigation ul li {
-            margin-bottom: 15px;
-            width: 100%;
-        }
-
-        .navigation ul li a {
-            display: flex;
-            align-items: center;
-            padding: 12px 15px;
-            color: white;
-            text-decoration: none;
-            font-size: 16px;
-            border-radius: 8px;
-            transition: background-color 0.3s ease;
-        }
-
-        .navigation ul li a i {
-            margin-right: 10px;
-            font-size: 18px;
-        }
-
-        .navigation ul li a:hover,
-        .navigation ul li a.active {
-            background-color: rgba(255, 255, 255, 0.2);
-        }
-
-        .main-content {
-            flex-grow: 1;
-            padding: 30px;
-            display: flex;
-            flex-direction: column;
-            gap: 30px;
-        }
-
-        .main-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .main-header h1 {
-            font-size: 32px;
-            color: #333;
-            font-weight: 700;
-        }
-
-        .header-icons {
-            display: flex;
-            gap: 15px;
-        }
-
-        .header-icons .icon-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid #000;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            color: #000;
-            font-size: 20px;
-            text-decoration: none;
-        }
-
-        .header-icons .icon-btn:hover {
-            background-color: #000;
-            color: #f5ff9c;
-            transform: scale(1.1);
-        }
-
-        .search-bar {
-            display: flex;
-            width: 100%;
-            max-width: 400px;
-            position: relative;
-        }
-
-        .search-bar input {
-            width: 100%;
-            padding: 10px 15px;
-            border: 1px solid #ccc;
-            border-radius: 20px;
-            font-size: 16px;
-            padding-right: 40px; /* Space for icon */
-        }
-
-        .search-bar .search-icon {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #888;
-        }
-
-        .dashboard-section {
-            background-color: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-        }
-
-        .dashboard-section h2 {
-            font-size: 24px;
-            color: #333;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 10px;
-        }
-
-        .dashboard-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-
-        .dashboard-table th,
-        .dashboard-table td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #eee;
-        }
-
-        .dashboard-table th {
-            background-color: #f8f8f8;
-            font-weight: 600;
-            color: #555;
-        }
-
-        .dashboard-table tbody tr:last-child td {
-            border-bottom: none;
-        }
-
-        .dashboard-table .status-not_found, .dashboard-table .status-unclaimed {
-            color: #dc3545; /* Red */
-            font-weight: 600;
-        }
-
-        .dashboard-table .status-found, .dashboard-table .status-claimed {
-            color: #28a745; /* Green */
-            font-weight: 600;
-        }
-
-        .dashboard-table .status-pending_approval {
-            color: #ffc107; /* Yellow/Orange */
-            font-weight: 600;
-        }
-
-        .dashboard-table .status-rejected {
-            color: #6c757d; /* Grey */
-            font-weight: 600;
-        }
-
-        .dashboard-table .action-buttons a {
-            display: inline-block;
-            padding: 6px 12px;
-            margin-right: 5px;
-            border-radius: 5px;
-            text-decoration: none;
-            font-size: 14px;
-            transition: background-color 0.3s ease;
-        }
-
-        .dashboard-table .action-buttons .view-btn {
-            background-color: #007bff;
-            color: white;
-        }
-
-        .dashboard-table .action-buttons .view-btn:hover {
-            background-color: #0056b3;
-        }
-
-        .dashboard-table .action-buttons .edit-btn {
-            background-color: #ffc107;
-            color: #333;
-        }
-
-        .dashboard-table .action-buttons .edit-btn:hover {
-            background-color: #e0a800;
-        }
-
-        .dashboard-table .action-buttons .mark-found-btn,
-        .dashboard-table .action-buttons .mark-claimed-btn {
-            background-color: #28a745;
-            color: white;
-        }
-
-        .dashboard-table .action-buttons .mark-found-btn:hover,
-        .dashboard-table .action-buttons .mark-claimed-btn:hover {
-            background-color: #218838;
-        }
-
-        .dashboard-bottom-row {
-            display: flex;
-            gap: 30px;
-            flex-wrap: wrap; /* Allow wrapping */
-        }
-
-        .dashboard-stats,
-        .match-alerts {
-            flex: 1;
-            background-color: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            min-width: 300px; /* Ensure they don't get too small */
-        }
-
-        .dashboard-stats h2,
-        .match-alerts h2 {
-            font-size: 24px;
-            color: #333;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 10px;
-        }
-
-        .dashboard-stats ul {
-            list-style: none;
-            padding: 0;
-        }
-
-        .dashboard-stats ul li {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px dashed #eee;
-            font-size: 16px;
-            color: #555;
-        }
-
-        .dashboard-stats ul li:last-child {
-            border-bottom: none;
-        }
-
-        .dashboard-stats ul li span {
-            font-weight: 600;
-            color: #333;
-        }
-
-        .match-alerts p {
-            font-size: 16px;
-            color: #555;
-            margin-bottom: 20px;
-        }
-
-        .match-alerts .alert-actions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .match-alerts .alert-actions .btn {
-            padding: 10px 15px;
-            border-radius: 8px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            text-decoration: none;
-            color: white;
-        }
-
-        .match-alerts .alert-actions .view-image-btn {
-            background-color: #6c757d;
-        }
-
-        .match-alerts .alert-actions .view-image-btn:hover {
-            background-color: #5a6268;
-        }
-
-        .match-alerts .alert-actions .contact-finder-btn {
-            background-color: #17a2b8;
-        }
-
-        .match-alerts .alert-actions .contact-finder-btn:hover {
-            background-color: #138496;
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 1024px) {
-            .dashboard-container {
-                flex-direction: column;
-                margin: 15px;
-            }
-
-            .sidebar {
-                width: 100%;
-                padding: 20px;
-                flex-direction: row;
-                justify-content: space-between;
-                align-items: center;
-                flex-wrap: wrap;
-            }
-
-            .sidebar .logo {
-                margin-bottom: 0;
-            }
-
-            .user-profile {
-                margin-bottom: 0;
-                display: flex;
-                align-items: center;
-                gap: 15px;
-            }
-
-            .user-profile .avatar {
-                width: 70px;
-                height: 70px;
-            }
-
-            .user-profile .user-info {
-                text-align: left;
-            }
-
-            .navigation {
-                width: 100%;
-                margin-top: 20px;
-            }
-
-            .navigation ul {
-                display: flex;
-                flex-wrap: wrap;
-                justify-content: center;
-                gap: 10px;
-            }
-
-            .navigation ul li {
-                margin-bottom: 0;
-                width: auto;
-            }
-
-            .main-content {
-                padding: 20px;
-            }
-
-            .main-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 15px;
-            }
-
-            .search-bar {
-                width: 100%;
-                max-width: none;
-            }
-
-            .dashboard-bottom-row {
-                flex-direction: column;
-                gap: 20px;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .user-profile {
-                flex-direction: column;
-                text-align: center;
-                margin-bottom: 20px;
-            }
-
-            .telegram-link-btn {
-                margin-top: 10px;
-            }
-
-            .navigation ul {
-                flex-direction: column;
-                align-items: center;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .dashboard-container {
-                margin: 10px;
-            }
-
-            .sidebar .logo {
-                font-size: 30px;
-            }
-
-            .user-profile .avatar {
-                width: 60px;
-                height: 60px;
-            }
-
-            .user-profile .user-info .user-name {
-                font-size: 18px;
-            }
-
-            .user-profile .user-info .user-email {
-                font-size: 12px;
-            }
-
-            .main-content {
-                padding: 15px;
-                gap: 20px;
-            }
-
-            .main-header h1 {
-                font-size: 28px;
-            }
-
-            .header-icons .icon-btn {
-                width: 35px;
-                height: 35px;
-                font-size: 18px;
-            }
-
-            .dashboard-section h2,
-            .dashboard-stats h2,
-            .match-alerts h2 {
-                font-size: 20px;
-            }
-
-            .dashboard-table th,
-            .dashboard-table td {
-                padding: 8px 10px;
-                font-size: 14px;
-            }
-
-            .dashboard-table .action-buttons a {
-                padding: 4px 8px;
-                font-size: 12px;
-            }
-
-            .dashboard-stats ul li {
-                font-size: 14px;
-            }
-
-            .match-alerts p {
-                font-size: 14px;
-            }
-
-            .match-alerts .alert-actions .btn {
-                padding: 8px 12px;
-                font-size: 12px;
-            }
-        }
-    </style>
+    body {
+        background-color: #f5ff9c;
+        font-family: 'Poppins', sans-serif;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        min-height: 100vh;
+    }
+
+    .dashboard-container {
+        display: flex;
+        width: 100%;
+        background-color: #fffdd0;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        margin: 20px;
+        overflow: hidden;
+    }
+
+    .sidebar {
+        width: 250px;
+        background-color: #8b1e1e;
+        color: white;
+        padding: 30px 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .sidebar .logo {
+        font-size: 36px;
+        font-weight: 800;
+        margin-bottom: 30px;
+        text-shadow: 2px 2px 2px rgba(0, 0, 0, 0.2);
+    }
+
+    .user-profile {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .user-profile .avatar {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid white;
+        margin-bottom: 10px;
+    }
+
+    .user-profile .user-info .user-name {
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+
+    .user-profile .user-info .user-email {
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.8);
+        margin-bottom: 10px;
+    }
+
+    .telegram-link-btn {
+        display: inline-flex;
+        align-items: center;
+        background-color: #0088cc;
+        color: white;
+        padding: 8px 15px;
+        border-radius: 20px;
+        text-decoration: none;
+        font-size: 14px;
+        transition: background-color 0.3s ease;
+    }
+
+    .telegram-link-btn i {
+        margin-right: 8px;
+    }
+
+    .telegram-link-btn:hover {
+        background-color: #006699;
+    }
+
+    .navigation ul {
+        list-style: none;
+        padding: 0;
+        width: 100%;
+    }
+
+    .navigation ul li {
+        margin-bottom: 15px;
+        width: 100%;
+    }
+
+    .navigation ul li a {
+        display: flex;
+        align-items: center;
+        padding: 12px 15px;
+        color: white;
+        text-decoration: none;
+        font-size: 16px;
+        border-radius: 8px;
+        transition: background-color 0.3s ease;
+    }
+
+    .navigation ul li a i {
+        margin-right: 10px;
+        font-size: 18px;
+    }
+
+    .navigation ul li a:hover,
+    .navigation ul li a.active {
+        background-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .main-content {
+        flex-grow: 1;
+        padding: 30px;
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+    }
+
+    .main-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .main-header h1 {
+        font-size: 32px;
+        color: #333;
+        font-weight: 700;
+    }
+
+    .header-icons {
+        display: flex;
+        gap: 15px;
+    }
+
+    .header-icons .icon-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid #000;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        color: #000;
+        font-size: 20px;
+        text-decoration: none;
+    }
+
+    .header-icons .icon-btn:hover {
+        background-color: #000;
+        color: #f5ff9c;
+        transform: scale(1.1);
+    }
+
+    .search-bar {
+        display: flex;
+        width: 100%;
+        max-width: 400px;
+        position: relative;
+    }
+
+    .search-bar input {
+        width: 100%;
+        padding: 10px 15px;
+        border: 1px solid #ccc;
+        border-radius: 20px;
+        font-size: 16px;
+        padding-right: 40px;
+    }
+
+    .search-bar .search-icon {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #888;
+    }
+
+    .dashboard-section {
+        background-color: white;
+        padding: 25px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .dashboard-section h2 {
+        font-size: 24px;
+        color: #333;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 10px;
+    }
+
+    .dashboard-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+    }
+
+    .dashboard-table th,
+    .dashboard-table td {
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+    }
+
+    .dashboard-table th {
+        background-color: #f8f8f8;
+        font-weight: 600;
+        color: #555;
+    }
+
+    .dashboard-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .dashboard-table .status-not_found, .dashboard-table .status-unclaimed {
+        color: #dc3545;
+        font-weight: 600;
+    }
+
+    .dashboard-table .status-found, .dashboard-table .status-claimed {
+        color: #28a745;
+        font-weight: 600;
+    }
+
+    .dashboard-table .status-pending_approval {
+        color: #ffc107;
+        font-weight: 600;
+    }
+
+    .dashboard-table .status-rejected {
+        color: #6c757d;
+        font-weight: 600;
+    }
+
+    .dashboard-table .action-buttons a {
+        display: inline-block;
+        padding: 6px 12px;
+        margin-right: 5px;
+        border-radius: 5px;
+        text-decoration: none;
+        font-size: 14px;
+        transition: background-color 0.3s ease;
+    }
+
+    .dashboard-table .action-buttons .view-btn {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .dashboard-table .action-buttons .view-btn:hover {
+        background-color: #0056b3;
+    }
+
+    .dashboard-table .action-buttons .edit-btn {
+        background-color: #ffc107;
+        color: #333;
+    }
+
+    .dashboard-table .action-buttons .edit-btn:hover {
+        background-color: #e0a800;
+    }
+
+    .dashboard-table .action-buttons .mark-found-btn,
+    .dashboard-table .action-buttons .mark-claimed-btn {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .dashboard-table .action-buttons .mark-found-btn:hover,
+    .dashboard-table .action-buttons .mark-claimed-btn:hover {
+        background-color: #218838;
+    }
+
+    .dashboard-bottom-row {
+        display: flex;
+        gap: 30px;
+        flex-wrap: wrap;
+    }
+
+    .dashboard-stats,
+    .match-alerts {
+        flex: 1;
+        background-color: white;
+        padding: 25px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        min-width: 300px;
+    }
+
+    .dashboard-stats h2,
+    .match-alerts h2 {
+        font-size: 24px;
+        color: #333;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 10px;
+    }
+
+    .dashboard-stats ul {
+        list-style: none;
+        padding: 0;
+    }
+
+    .dashboard-stats ul li {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px dashed #eee;
+        font-size: 16px;
+        color: #555;
+    }
+
+    .dashboard-stats ul li:last-child {
+        border-bottom: none;
+    }
+
+    .dashboard-stats ul li span {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .match-alerts p {
+        font-size: 16px;
+        color: #555;
+        margin-bottom: 20px;
+    }
+
+    .match-alerts .alert-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .match-alerts .alert-actions .btn {
+        padding: 10px 15px;
+        border-radius: 8px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        text-decoration: none;
+        color: white;
+    }
+
+    .match-alerts .alert-actions .view-image-btn {
+        background-color: #6c757d;
+    }
+
+    .match-alerts .alert-actions .view-image-btn:hover {
+        background-color: #5a6268;
+    }
+
+    .match-alerts .alert-actions .contact-finder-btn {
+        background-color: #17a2b8;
+    }
+
+    .match-alerts .alert-actions .contact-finder-btn:hover {
+        background-color: #138496;
+    }
+
+    /* === DARK MODE STYLES === */
+  /* Dark Mode Root Styles */
+body.dark-mode {
+  background-color: #121212;
+  color: #f5f5f5;
+}
+
+/* Sidebar Styles */
+body.dark-mode .sidebar {
+  background-color: #222;
+  color: #fff;
+}
+
+body.dark-mode .sidebar h1,
+body.dark-mode .sidebar a,
+body.dark-mode .sidebar span {
+  color: #ffffff !important;
+  font-weight: 600;
+}
+
+body.dark-mode .sidebar a:hover {
+  background-color: #333;
+  color: #f5ff9c;
+}
+
+/* Logo & Header */
+body.dark-mode .logo {
+  color: #ffffff !important;
+  font-weight: 800;
+  text-shadow: none;
+}
+
+/* Main Content Containers */
+body.dark-mode .main-content,
+body.dark-mode .dashboard-container,
+body.dark-mode .dashboard-section,
+body.dark-mode .dashboard-stats,
+body.dark-mode .match-alerts,
+body.dark-mode .form-container,
+body.dark-mode .card,
+body.dark-mode .profile-container,
+body.dark-mode .edit-form-container {
+  background-color: #1e1e1e !important;
+  color: #f5f5f5 !important;
+  box-shadow: 0 5px 15px rgba(255, 255, 255, 0.05);
+  border-color: #444;
+}
+
+/* Dashboard Cards (Stats) */
+body.dark-mode .stat-box,
+body.dark-mode .dashboard-card {
+  background-color: #2c2c2c !important;
+  color: #f5f5f5 !important;
+  border: 1px solid #444 !important;
+}
+
+/* Table Styles */
+body.dark-mode table,
+body.dark-mode th,
+body.dark-mode td {
+  background-color: #2c2c2c;
+  color: #f5f5f5;
+  border-color: #444;
+}
+
+body.dark-mode .dashboard-table th {
+  background-color: #333;
+  color: #f5f5f5;
+}
+
+/* Button Styles */
+body.dark-mode .btn,
+body.dark-mode button,
+body.dark-mode .view-btn,
+body.dark-mode .edit-btn,
+body.dark-mode .mark-found-btn,
+body.dark-mode .mark-claimed-btn {
+  border: none;
+  font-weight: 600;
+  border-radius: 6px;
+  color: #fff;
+}
+
+body.dark-mode .btn,
+body.dark-mode button {
+  background-color: #8b1e1e;
+}
+
+body.dark-mode .btn:hover,
+body.dark-mode button:hover {
+  background-color: #a42b2b;
+}
+
+body.dark-mode .view-btn {
+  background-color: #339af0;
+}
+
+body.dark-mode .edit-btn {
+  background-color: #f1c40f;
+  color: #000;
+}
+
+body.dark-mode .mark-found-btn,
+body.dark-mode .mark-claimed-btn {
+  background-color: #28a745;
+  color: #fff;
+}
+
+/* Form Elements */
+body.dark-mode input,
+body.dark-mode select,
+body.dark-mode textarea {
+  background-color: #2c2c2c;
+  color: #f5f5f5;
+  border: 1px solid #555;
+}
+
+body.dark-mode input::placeholder,
+body.dark-mode textarea::placeholder {
+  color: #aaaaaa;
+}
+
+/* Upload Box */
+body.dark-mode .upload-section {
+  border: 2px dashed #555;
+  color: #ccc;
+}
+
+/* Home / Icon Buttons */
+body.dark-mode .icon-btn,
+body.dark-mode .back-btn,
+body.dark-mode .home-icon {
+  background-color: #333;
+  border-color: #f5f5f5;
+  color: #f5f5f5;
+}
+
+body.dark-mode .icon-btn:hover,
+body.dark-mode .back-btn:hover,
+body.dark-mode .home-icon:hover {
+  background-color: #f5f5f5;
+  color: #121212;
+}
+
+/* Message Boxes */
+body.dark-mode .message.success {
+  background-color: #2e7d32;
+  color: #dfffd8;
+  border: 1px solid #4caf50;
+}
+
+body.dark-mode .message.error {
+  background-color: #b71c1c;
+  color: #ffdada;
+  border: 1px solid #ef5350;
+}
+
+/* Headings and Links */
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode a {
+  color: #ffffff;
+}
+
+/* Alerts (if applicable) */
+body.dark-mode .alert,
+body.dark-mode .match-alert {
+  background-color: #2c2c2c;
+  border-color: #444;
+  color: #f5f5f5;
+}
+
+</style>
 </head>
-<body>
+<body class="<?php echo $darkMode ? 'dark-mode' : ''; ?>">
     <div class="dashboard-container">
         <aside class="sidebar">
             <div class="logo">FoundIt</div>

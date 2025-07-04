@@ -16,6 +16,12 @@
     body {
       background-color: #f5ff9c;
       padding: 20px;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    body.dark-mode {
+      background-color: #121212;
+      color: #f5f5f5;
     }
 
     .header {
@@ -72,6 +78,10 @@
       max-width: 900px;
       margin: 0 auto;
       position: relative;
+    }
+
+    body.dark-mode .content-box {
+      background-color: #1e1e1e;
     }
 
     .back-btn {
@@ -138,6 +148,7 @@
       overflow: hidden;
       cursor: pointer;
       position: relative;
+      text-align: center;
     }
 
     .image-box img {
@@ -158,6 +169,13 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
+    }
+
+    body.dark-mode .details-box,
+    body.dark-mode .description-box,
+    body.dark-mode .status-box {
+      background-color: #2b2b2b;
+      color: #f5f5f5;
     }
 
     .details-box input,
@@ -212,7 +230,7 @@
     }
   </style>
 </head>
-<body>
+<body class="" id="body">
 
   <div class="header">
     <div class="logo">FoundIt</div>
@@ -288,6 +306,9 @@
       document.getElementById('lastUpdated').innerText = `Last updated: ${formattedDate}`;
       alert("Form updated successfully on " + formattedDate);
     }
+
+    // Optional: Add toggle support for dark mode
+    // document.getElementById('body').classList.add('dark-mode');
   </script>
 
 </body>

@@ -1,5 +1,6 @@
 <?php
 session_start();
+$isDark = isset($_SESSION['dark_mode']) && $_SESSION['dark_mode'];
 require_once 'db_connect.php';
 require_once 'config.php';
 
@@ -13,6 +14,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $user_full_name = $_SESSION['full_name'] ?? 'User';
+$isDark = isset($_SESSION['dark_mode']) && $_SESSION['dark_mode'];
 
 // Fetch user profile image path for display
 $user_profile_image_path = '';
