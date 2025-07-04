@@ -3,8 +3,6 @@ session_start();
 require_once 'db_connect.php';
 require_once 'config.php';
 
-$darkMode = isset($_SESSION['dark_mode']) && $_SESSION['dark_mode'] === true;
-
 // Enable error reporting for debugging
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
@@ -219,78 +217,6 @@ if ($item_id) {
         color: #721c24;
         border: 1px solid #f5c6cb;
     }
-    /* Dark Mode Styles */
-/* Apply full page dark mode */
-body.dark-mode {
-  background-color: #121212;
-  color: #f5f5f5;
-}
-
-/* Fix all form elements inside dark mode */
-body.dark-mode input,
-body.dark-mode textarea,
-body.dark-mode select {
-  background-color: #1e1e1e;
-  color: #f5f5f5;
-  border: 1px solid #444;
-}
-
-body.dark-mode input::placeholder,
-body.dark-mode textarea::placeholder {
-  color: #aaa;
-}
-
-body.dark-mode .form-container {
-  background-color: #1e1e1e;
-  color: #f5f5f5;
-  box-shadow: 0 5px 15px rgba(255, 255, 255, 0.1);
-}
-
-/* Labels and headings */
-body.dark-mode h1,
-body.dark-mode h2,
-body.dark-mode label {
-  color: #f5f5f5;
-}
-
-/* Upload section */
-body.dark-mode .upload-section {
-  border-color: #666;
-  background-color: #2c2c2c;
-}
-
-/* Upload icon */
-body.dark-mode .upload-icon {
-  color: #bb86fc;
-}
-
-/* Image preview border */
-body.dark-mode .upload-section img {
-  border: 1px solid #777;
-}
-
-/* Buttons */
-body.dark-mode .form-container button[type="submit"] {
-  background-color: #bb86fc;
-  color: #000;
-}
-
-body.dark-mode .form-container button[type="submit"]:hover {
-  background-color: #9c5de0;
-}
-
-/* Home icon button */
-body.dark-mode .home-icon {
-  background-color: #333;
-  border-color: #f5f5f5;
-  color: #f5f5f5;
-}
-
-body.dark-mode .home-icon:hover {
-  background-color: #f5f5f5;
-  color: #121212;
-}
-
   </style>
 </head>
 <body class="<?php echo $darkMode ? 'dark-mode' : ''; ?>">

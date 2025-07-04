@@ -1,6 +1,5 @@
 <?php
 session_start();
-$isDark = isset($_SESSION['dark_mode']) && $_SESSION['dark_mode'];
 
 require_once 'db_connect.php';
 require_once 'config.php';
@@ -265,8 +264,6 @@ closeDbConnection($conn);
     }
   </style>
 </head>
-<?php echo '<body class="' . ($isDark ? 'dark' : 'light') . '">'; ?>
-
   <div class="navbar">
     <div class="logo">FoundIt</div>
     <div class="search-box">
