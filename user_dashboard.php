@@ -15,7 +15,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $user_id = $_SESSION['user_id'];
-$user_full_name = $_SESSION['full_name'] ?? 'User';
+$user_full_name = $_SESSION['full_name'] ?? 'User ';
 $user_email = $_SESSION['email'] ?? ''; // Assuming email is stored in session upon login
 $user_telegram = ''; // Will fetch from DB if available
 $user_profile_image_path = ''; // Will fetch from DB if available
@@ -36,7 +36,6 @@ if ($stmt_user_info) {
 } else {
     error_log("Error preparing user info query: " . $conn->error);
 }
-
 
 // Fetch user's reported lost items
 $user_lost_items = [];
@@ -156,30 +155,20 @@ function formatStatus($status) {
             margin-bottom: 10px;
         }
 
-        .telegram-link-btn {
-            display: inline-flex;
-            align-items: center;
-            background-color: #0088cc; /* Telegram blue */
-            color: white;
-            padding: 8px 15px;
-            border-radius: 20px;
-            text-decoration: none;
-            font-size: 14px;
-            transition: background-color 0.3s ease;
-        }
-
-        .telegram-link-btn i {
-            margin-right: 8px;
-        }
-
-        .telegram-link-btn:hover {
-            background-color: #006699;
-        }
-
         .navigation ul {
             list-style: none;
             padding: 0;
             width: 100%;
+        }
+
+        .dashboard-table .status-found,
+        .dashboard-table .status-claimed {
+            display: inline-block;
+            background-color: #d4edda; /* light green background */
+            color: #28a745; /* green text */
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 8px;
         }
 
         .navigation ul li {
@@ -196,11 +185,6 @@ function formatStatus($status) {
             font-size: 16px;
             border-radius: 8px;
             transition: background-color 0.3s ease;
-        }
-
-        .navigation ul li a i {
-            margin-right: 10px;
-            font-size: 18px;
         }
 
         .navigation ul li a:hover,
@@ -256,30 +240,6 @@ function formatStatus($status) {
             transform: scale(1.1);
         }
 
-        .search-bar {
-            display: flex;
-            width: 100%;
-            max-width: 400px;
-            position: relative;
-        }
-
-        .search-bar input {
-            width: 100%;
-            padding: 10px 15px;
-            border: 1px solid #ccc;
-            border-radius: 20px;
-            font-size: 16px;
-            padding-right: 40px; /* Space for icon */
-        }
-
-        .search-bar .search-icon {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #888;
-        }
-
         .dashboard-section {
             background-color: white;
             padding: 25px;
@@ -314,68 +274,17 @@ function formatStatus($status) {
             color: #555;
         }
 
-        .dashboard-table tbody tr:last-child td {
-            border-bottom: none;
-        }
-
-        .dashboard-table .status-not_found, .dashboard-table .status-unclaimed {
-            color: #dc3545; /* Red */
-            font-weight: 600;
-        }
-
-        .dashboard-table .status-found, .dashboard-table .status-claimed {
-            color: #6c757d; /* Green */
-            background-color: #d4edda;
-            font-weight: 600;
-        }
-
-        .dashboard-table .status-pending_approval {
-            color: #ffc107; /* Yellow/Orange */
-            font-weight: 600;
-        }
-
-        .dashboard-table .status-rejected {
-            color: #6c757d; /* Grey */
-            font-weight: 600;
-        }
-
-        .dashboard-table .action-buttons a {
-            display: inline-block;
+        .dashboard-table .action-buttons .delete-btn {
+            background-color: #dc3545; /* Red */
+            color: white;
             padding: 6px 12px;
-            margin-right: 5px;
             border-radius: 5px;
             text-decoration: none;
-            font-size: 14px;
             transition: background-color 0.3s ease;
         }
 
-        .dashboard-table .action-buttons .view-btn {
-            background-color: #007bff;
-            color: white;
-        }
-
-        .dashboard-table .action-buttons .view-btn:hover {
-            background-color: #0056b3;
-        }
-
-        .dashboard-table .action-buttons .edit-btn {
-            background-color: #ffc107;
-            color: #333;
-        }
-
-        .dashboard-table .action-buttons .edit-btn:hover {
-            background-color: #e0a800;
-        }
-
-        .dashboard-table .action-buttons .mark-found-btn,
-        .dashboard-table .action-buttons .mark-claimed-btn {
-            background-color: #28a745;
-            color: white;
-        }
-
-        .dashboard-table .action-buttons .mark-found-btn:hover,
-        .dashboard-table .action-buttons .mark-claimed-btn:hover {
-            background-color: #218838;
+        .dashboard-table .action-buttons .delete-btn:hover {
+            background-color: #c82333;
         }
 
         .dashboard-bottom-row {
@@ -432,41 +341,6 @@ function formatStatus($status) {
             margin-bottom: 20px;
         }
 
-        .match-alerts .alert-actions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .match-alerts .alert-actions .btn {
-            padding: 10px 15px;
-            border-radius: 8px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            text-decoration: none;
-            color: white;
-        }
-
-        .match-alerts .alert-actions .view-image-btn {
-            background-color: #6c757d;
-        }
-
-        .match-alerts .alert-actions .view-image-btn:hover {
-            background-color: #5a6268;
-        }
-
-        .match-alerts .alert-actions .contact-finder-btn {
-            background-color: #17a2b8;
-        }
-
-        .match-alerts .alert-actions .contact-finder-btn:hover {
-            background-color: #138496;
-        }
-
         /* Responsive adjustments */
         @media (max-width: 1024px) {
             .dashboard-container {
@@ -483,61 +357,8 @@ function formatStatus($status) {
                 flex-wrap: wrap;
             }
 
-            .sidebar .logo {
-                margin-bottom: 0;
-            }
-
-            .user-profile {
-                margin-bottom: 0;
-                display: flex;
-                align-items: center;
-                gap: 15px;
-            }
-
-            .user-profile .avatar {
-                width: 70px;
-                height: 70px;
-            }
-
-            .user-profile .user-info {
-                text-align: left;
-            }
-
-            .navigation {
-                width: 100%;
-                margin-top: 20px;
-            }
-
-            .navigation ul {
-                display: flex;
-                flex-wrap: wrap;
-                justify-content: center;
-                gap: 10px;
-            }
-
-            .navigation ul li {
-                margin-bottom: 0;
-                width: auto;
-            }
-
             .main-content {
                 padding: 20px;
-            }
-
-            .main-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 15px;
-            }
-
-            .search-bar {
-                width: 100%;
-                max-width: none;
-            }
-
-            .dashboard-bottom-row {
-                flex-direction: column;
-                gap: 20px;
             }
         }
 
@@ -551,83 +372,6 @@ function formatStatus($status) {
                 flex-direction: column;
                 text-align: center;
                 margin-bottom: 20px;
-            }
-
-            .telegram-link-btn {
-                margin-top: 10px;
-            }
-
-            .navigation ul {
-                flex-direction: column;
-                align-items: center;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .dashboard-container {
-                margin: 10px;
-            }
-
-            .sidebar .logo {
-                font-size: 30px;
-            }
-
-            .user-profile .avatar {
-                width: 60px;
-                height: 60px;
-            }
-
-            .user-profile .user-info .user-name {
-                font-size: 18px;
-            }
-
-            .user-profile .user-info .user-email {
-                font-size: 12px;
-            }
-
-            .main-content {
-                padding: 15px;
-                gap: 20px;
-            }
-
-            .main-header h1 {
-                font-size: 28px;
-            }
-
-            .header-icons .icon-btn {
-                width: 35px;
-                height: 35px;
-                font-size: 18px;
-            }
-
-            .dashboard-section h2,
-            .dashboard-stats h2,
-            .match-alerts h2 {
-                font-size: 20px;
-            }
-
-            .dashboard-table th,
-            .dashboard-table td {
-                padding: 8px 10px;
-                font-size: 14px;
-            }
-
-            .dashboard-table .action-buttons a {
-                padding: 4px 8px;
-                font-size: 12px;
-            }
-
-            .dashboard-stats ul li {
-                font-size: 14px;
-            }
-
-            .match-alerts p {
-                font-size: 14px;
-            }
-
-            .match-alerts .alert-actions .btn {
-                padding: 8px 12px;
-                font-size: 12px;
             }
         }
     </style>
@@ -645,15 +389,12 @@ function formatStatus($status) {
                 <div class="user-info">
                     <div class="user-name"><?php echo htmlspecialchars($user_full_name); ?></div>
                     <div class="user-email"><?php echo htmlspecialchars($_SESSION['email'] ?? ''); ?></div>
-                    <?php if (!empty($user_telegram)): ?>
-                    <?php endif; ?>
                 </div>
             </div>
             <nav class="navigation">
                 <ul>
                     <li><a href="homepage.php" class="active"><i class="fas fa-home"></i> Home</a></li>
                     <li><a href="profile.php"><i class="fas fa-user"></i> Profile</a></li>
-                    <li><a href="settings.php"><i class="fas fa-cog"></i> Settings</a></li>
                     <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                 </ul>
             </nav>
@@ -707,13 +448,12 @@ function formatStatus($status) {
                                     <td><?php echo date('d M Y', strtotime($item['created_at'])); ?></td>
                                     <td class="action-buttons">
                                         <a href="<?php echo htmlspecialchars($item['type']); ?>_item_view.php?id=<?php echo htmlspecialchars($item['id']); ?>" class="view-btn">View</a>
-                                        <?php if ($item['status'] !== 'found' && $item['status'] !== 'claimed' && $item['status'] !== 'rejected'): // Only allow edit if not resolved or rejected ?>
+                                        <?php if ($item['status'] !== 'found' && $item['status'] !== 'claimed' && $item['status'] !== 'rejected'): ?>
                                             <a href="report_<?php echo htmlspecialchars($item['type']); ?>_form.php?id=<?php echo htmlspecialchars($item['id']); ?>" class="edit-btn">Edit</a>
-                                        <?php endif; ?>
-                                        <?php if ($item['type'] === 'lost' && $item['status'] === 'not_found'): ?>
-                                            
-                                        <?php elseif ($item['type'] === 'found' && $item['status'] === 'unclaimed'): ?>
-                                            
+                                            <form action="delete_item.php" method="POST" style="display:inline;">
+                                                <input type="hidden" name="item_id" value="<?php echo htmlspecialchars($item['id']); ?>">
+                                                <button type="submit" class="delete-btn" onclick="return confirm('Are you sure you want to delete this item?');">Delete</button>
+                                            </form>
                                         <?php endif; ?>
                                     </td>
                                 </tr>
@@ -734,68 +474,16 @@ function formatStatus($status) {
                         <li>Items Reported (Lost) <span><?php echo count($user_lost_items); ?></span></li>
                         <li>Items Reported (Found) <span><?php echo count($user_found_items); ?></span></li>
                         <li>Total Reported Items <span><?php echo count($user_lost_items) + count($user_found_items); ?></span></li>
-                        <!-- Placeholder for future features -->
-                        <li>Pending Matches <span>0</span></li>
-                        <li>Resolved Cases <span>0</span></li>
                     </ul>
                 </section>
 
                 <section class="match-alerts">
                     <h2>Match Alerts</h2>
                     <p>No new match alerts at the moment.</p>
-                    <div class="alert-actions">
-                        <!-- Placeholder buttons for future features -->
-                        <button class="btn view-image-btn" onclick="alert('View Image functionality to be implemented.')"><i class="fas fa-image"></i> View Image</button>
-                        <button class="btn contact-finder-btn" onclick="alert('Contact Finder functionality to be implemented.')"><i class="fas fa-user-circle"></i> Contact Finder</button>
-                    </div>
                 </section>
             </div>
         </main>
     </div>
-
-    <script>
-        let currentStatusAction = '';
-        let currentItemId = null;
-        let currentItemType = '';
-
-        function showConfirmation(action, itemId, itemType) {
-            currentStatusAction = action;
-            currentItemId = itemId;
-            currentItemType = itemType;
-            const modal = document.getElementById('confirmationModal');
-            const message = document.getElementById('confirmationMessage');
-
-            if (action === 'found') {
-                message.textContent = "Are you sure you want to mark this lost item as 'Found'? This action cannot be undone.";
-            } else if (action === 'claimed') {
-                message.textContent = "Are you sure you want to mark this found item as 'Claimed by owner'? This action cannot be undone.";
-            }
-            modal.style.display = 'flex';
-        }
-
-        function hideConfirmation() {
-            document.getElementById('confirmationModal').style.display = 'none';
-            currentItemId = null;
-            currentItemType = '';
-            currentStatusAction = '';
-        }
-
-        document.getElementById('confirmAction').addEventListener('click', function() {
-            hideConfirmation();
-            if (currentItemId && currentItemType && currentStatusAction) {
-                // Redirect to update status script with item ID, type, and new status
-                window.location.href = `item_status.php?id=${currentItemId}&type=${currentItemType}&new_status=${currentStatusAction}`;
-            }
-        });
-
-        // Close the modal if the user clicks outside of it
-        window.addEventListener('click', function(event) {
-            const modal = document.getElementById('confirmationModal');
-            if (event.target === modal) {
-                hideConfirmation();
-            }
-        });
-    </script>
 
     <?php include 'message_modal.php'; ?>
 

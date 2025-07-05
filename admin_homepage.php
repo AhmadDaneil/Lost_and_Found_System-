@@ -84,7 +84,7 @@ $search_query = $_GET['search'] ?? '';
 
 // Get all users
 $users = [];
-$users_result = $conn->query("SELECT id, full_name, email, phone_number, created_at FROM users ORDER BY created_at DESC");
+$users_result = $conn->query("SELECT id, full_name, email, phone_number, created_at, user_type FROM users ORDER BY created_at DESC");
 if ($users_result) {
     $users = $users_result->fetch_all(MYSQLI_ASSOC);
 }
@@ -177,6 +177,22 @@ function formatStatus($status, $item_type) {
         $statusInfo['text']
     );
 }
+
+// Handle user type change
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_id'], $_POST['new_user_type'])) {
+    $user_id = $_POST['user_id'];
+    $new_user_type = $_POST['new_user_type'];
+
+    $conn = getDbConnection();
+    $stmt_update_user_type = $conn->prepare("UPDATE users SET user_type = ? WHERE id = ?");
+    $stmt_update_user_type->bind_param("si", $new_user_type, $user_id);
+    $stmt_update_user_type->execute();
+    $stmt_update_user_type->close();
+    closeDbConnection($conn);
+
+    header("Location: admin_homepage.php?message=User  type updated successfully");
+    exit();
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -187,6 +203,7 @@ function formatStatus($status, $item_type) {
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* Add your CSS styles here */
         :root {
             --primary: #4361ee;
             --primary-dark: #3a56d4;
@@ -548,7 +565,7 @@ function formatStatus($status, $item_type) {
         }
 
         .modal-body {
-            margin-bottom: 1.5rem;
+                        margin-bottom: 1.5rem;
             color: var(--gray);
         }
 
@@ -729,6 +746,7 @@ function formatStatus($status, $item_type) {
                                 <th>Email</th>
                                 <th>Phone</th>
                                 <th>Registered</th>
+                                <th>User Type</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -741,6 +759,15 @@ function formatStatus($status, $item_type) {
                                         <td><?= htmlspecialchars($user['email']) ?></td>
                                         <td><?= htmlspecialchars($user['phone_number'] ?? 'N/A') ?></td>
                                         <td><?= date('M j, Y', strtotime($user['created_at'])) ?></td>
+                                        <td>
+                                            <form action="admin_homepage.php" method="POST" style="display:inline;">
+                                                <input type="hidden" name="user_id" value="<?= htmlspecialchars($user['id']) ?>">
+                                                <select name="new_user_type" onchange="this.form.submit()">
+                                                    <option value="user" <?= $user['user_type'] === 'user' ? 'selected' : ''; ?>>User </option>
+                                                    <option value="admin" <?= $user['user_type'] === 'admin' ? 'selected' : ''; ?>>Admin</option>
+                                                </select>
+                                            </form>
+                                        </td>
                                         <td class="user-actions">
                                             <?php if ($user['id'] == $_SESSION['user_id']): ?>
                                                 <span class="btn btn-light"><i class="fas fa-crown"></i> Current Admin</span>
@@ -754,7 +781,7 @@ function formatStatus($status, $item_type) {
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <tr>
-                                    <td colspan="6" class="empty-state">
+                                    <td colspan="7" class="empty-state">
                                         <i class="fas fa-user-slash"></i>
                                         <p>No registered users found</p>
                                     </td>

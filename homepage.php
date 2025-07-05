@@ -77,14 +77,9 @@ closeDbConnection($conn);
       padding: 0;
     }
 
-    body.light {
-      background-color: #f5ff9c;
+    body {
+      background-color: #f5ff9c; /* Set the background color to match other pages */
       color: #000;
-    }
-
-    body.dark {
-      background-color: #121212;
-      color: #e0e0e0;
     }
 
     .section {
@@ -93,11 +88,6 @@ closeDbConnection($conn);
       border-radius: 16px;
       margin-bottom: 30px;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    }
-
-    body.dark .section {
-      background-color: #1e1e1e;
-      color: #eee;
     }
 
     .navbar {
@@ -156,12 +146,6 @@ closeDbConnection($conn);
       text-decoration: none;
     }
 
-    body.dark .icon {
-      background-color: #333;
-      color: #fff;
-      border-color: #aaa;
-    }
-
     .icon:hover {
       background-color: #000;
       color: #f5ff9c;
@@ -203,18 +187,13 @@ closeDbConnection($conn);
       text-decoration: none;
     }
 
-    body.dark .item-card {
-      background-color: #2a2a2a;
-      color: #e0e0e0;
-    }
-
     .item-img {
       width: 100%;
       height: 120px;
       background-color: #e0e0e0;
       border-radius: 8px;
       margin-bottom: 10px;
-      overflow: hidden;
+            overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -264,6 +243,7 @@ closeDbConnection($conn);
     }
   </style>
 </head>
+<body>
   <div class="navbar">
     <div class="logo">FoundIt</div>
     <div class="search-box">
@@ -275,7 +255,6 @@ closeDbConnection($conn);
     <div class="nav-icons">
       <a href="user_dashboard.php" class="icon" title="Dashboard"><i class="fas fa-tachometer-alt"></i></a>
       <a href="profile.php" class="icon" title="Profile"><i class="fas fa-user"></i></a>
-      <a href="settings.php" class="icon" title="Settings"><i class="fas fa-cog"></i></a>
       <a href="logout.php" class="icon" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
     </div>
   </div>

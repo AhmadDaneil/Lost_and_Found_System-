@@ -347,9 +347,6 @@ function formatStatus($status) {
       <a href="profile.php" class="icon-btn" title="Profile">
         <i class="fas fa-user"></i>
       </a>
-      <a href="settings.php" class="icon-btn" title="Settings">
-        <i class="fas fa-cog"></i>
-      </a>
       <a href="logout.php" class="icon-btn" title="Logout">
         <i class="fas fa-sign-out-alt"></i>
       </a>

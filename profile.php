@@ -457,9 +457,6 @@ body.dark-mode .avatar-circle {
       <a href="user_dashboard.php" class="icon-btn" title="Dashboard">
         <i class="fas fa-tachometer-alt"></i>
       </a>
-      <a href="settings.php" class="icon-btn" title="Settings">
-        <i class="fas fa-cog"></i>
-      </a>
     </div>
   </div>
 
