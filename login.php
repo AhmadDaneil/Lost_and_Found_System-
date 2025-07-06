@@ -245,7 +245,7 @@ if (isset($_COOKIE['remember_user_id']) && !isset($_SESSION['user_id'])) {
 
   <div class="login-container">
     <div class="back-button-header">
-    <a href="index.html" class="back-button">
+    <a href="index.php" class="back-button">
     <i class="fas fa-arrow-left"></i> Back
     </a>
   </div>
