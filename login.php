@@ -267,12 +267,6 @@ if (isset($_COOKIE['remember_user_id']) && !isset($_SESSION['user_id'])) {
 
     <div class="separator"></div>
 
-    <div class="social-icons">
-      <i class="fab fa-google"></i>
-      <i class="fab fa-facebook-f"></i>
-      <i class="fab fa-apple"></i>
-    </div>
-
     <div class="signup-link">
       Don't have an account? <a href="signup.php">Sign Up</a> <!-- Updated from signup.html to signup.php -->
     </div>
